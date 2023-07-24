@@ -90,7 +90,7 @@ with open('README.md', 'r', encoding='utf-8') as file:
 setup(
     name=PACKAGE_NAME,
     version=getXrayCoreVersion(),
-    license='MIT',
+    license='MPL 2.0',
     description='Python bindings for Xray-core, the best v2ray-core with XTLS support.',
     long_description=long_description,
     long_description_content_type='text/markdown',
