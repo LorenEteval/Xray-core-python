@@ -1,5 +1,7 @@
 # Xray-core-python
 
+[![Build Xray-core binding](https://github.com/LorenEteval/Xray-core-python/actions/workflows/wheels.yml/badge.svg?branch=main)](https://github.com/LorenEteval/Xray-core-python/actions/workflows/wheels.yml)
+
 Python bindings for [Xray-core](https://github.com/XTLS/Xray-core), the best v2ray-core with XTLS support. This package
 provides a bridge to start Xray-core client directly from Python on any platform.
 
