@@ -72,9 +72,6 @@ FUNCTIONS
         startFromJSON(json: str) -> None
 
         Start Xray client with JSON string
-
-VERSION
-    1.8.3
 ```
 
 ## Source Code Modification
