@@ -42,6 +42,6 @@ namespace {
             "Start Xray client with JSON string",
             py::arg("json"));
 
-        m.attr("__version__") = "1.8.3";
+        m.attr("__version__") = "1.8.4";
     }
 }
