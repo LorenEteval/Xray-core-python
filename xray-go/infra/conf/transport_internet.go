@@ -622,6 +622,7 @@ type SocketConfig struct {
 	TCPUserTimeout       int32       `json:"tcpUserTimeout"`
 	V6only               bool        `json:"v6only"`
 	Interface            string      `json:"interface"`
+	TcpMptcp             bool        `json:"tcpMptcp"`
 }
 
 // Build implements Buildable.
@@ -653,12 +654,30 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 
 	dStrategy := internet.DomainStrategy_AS_IS
 	switch strings.ToLower(c.DomainStrategy) {
-	case "useip", "use_ip":
+	case "asis", "":
+		dStrategy = internet.DomainStrategy_AS_IS
+	case "useip":
 		dStrategy = internet.DomainStrategy_USE_IP
-	case "useip4", "useipv4", "use_ipv4", "use_ip_v4", "use_ip4":
+	case "useipv4":
 		dStrategy = internet.DomainStrategy_USE_IP4
-	case "useip6", "useipv6", "use_ipv6", "use_ip_v6", "use_ip6":
+	case "useipv6":
 		dStrategy = internet.DomainStrategy_USE_IP6
+	case "useipv4v6":
+		dStrategy = internet.DomainStrategy_USE_IP46
+	case "useipv6v4":
+		dStrategy = internet.DomainStrategy_USE_IP64
+	case "forceip":
+		dStrategy = internet.DomainStrategy_FORCE_IP
+	case "forceipv4":
+		dStrategy = internet.DomainStrategy_FORCE_IP4
+	case "forceipv6":
+		dStrategy = internet.DomainStrategy_FORCE_IP6
+	case "forceipv4v6":
+		dStrategy = internet.DomainStrategy_FORCE_IP46
+	case "forceipv6v4":
+		dStrategy = internet.DomainStrategy_FORCE_IP64
+	default:
+		return nil, newError("unsupported domain strategy: ", c.DomainStrategy)
 	}
 
 	return &internet.SocketConfig{
@@ -677,6 +696,7 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 		TcpUserTimeout:       c.TCPUserTimeout,
 		V6Only:               c.V6only,
 		Interface:            c.Interface,
+		TcpMptcp:             c.TcpMptcp,
 	}, nil
 }
 

@@ -2,27 +2,7 @@
 
 [![Build Xray-core binding](https://github.com/LorenEteval/Xray-core-python/actions/workflows/wheels.yml/badge.svg?branch=main)](https://github.com/LorenEteval/Xray-core-python/actions/workflows/wheels.yml)
 
-Python bindings for [Xray-core](https://github.com/XTLS/Xray-core), the best v2ray-core with XTLS support. This package
-provides a bridge to start Xray-core client directly from Python on any platform.
-
-Looking for [hysteria](https://github.com/apernet/hysteria) bindings?
-Check [hysteria-python](https://github.com/LorenEteval/hysteria-python).
-
-See the real-world production GUI client that takes advantage of the Python binding:
-[Furious](https://github.com/LorenEteval/Furious).
-
-## Start
-
-To use this binding, please first make sure that:
-
-* You are a Python developer, or your application is associated with this package.
-* You are building a client application. There is no point to use binding on the server side.
-* You want to provide additional abstraction for your client. The core(i.e. Xray-core) will be shipped with your
-  application as dynamic link library, not an executable.
-* This bridge provides functionality to start Xray-core directly from Python string(see the API below). What that means
-  is that the client config stays in memory all the time, and cannot(or very hard to) be inspected. So you can, for
-  example, get a configuration template from a remote server and edit it for a group of specific client and start the
-  service.
+Python bindings for [Xray-core](https://github.com/XTLS/Xray-core).
 
 ## Install
 

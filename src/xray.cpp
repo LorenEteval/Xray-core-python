@@ -28,7 +28,13 @@ namespace {
     {
         GoString jsonString{json.data(), static_cast<ptrdiff_t>(json.size())};
 
-        startFromJSON(jsonString);
+        {
+            py::gil_scoped_release release;
+
+            startFromJSON(jsonString);
+
+            py::gil_scoped_acquire acquire;
+        }
     }
 
     PYBIND11_MODULE(xray, m) {
@@ -42,6 +48,6 @@ namespace {
             "Start Xray client with JSON string",
             py::arg("json"));
 
-        m.attr("__version__") = "1.8.4";
+        m.attr("__version__") = "1.8.5";
     }
 }

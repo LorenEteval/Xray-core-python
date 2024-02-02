@@ -14,15 +14,7 @@ CMAKE_BUILD_CACHE = 'CMakeBuildCache'
 
 
 def getXrayCoreVersion():
-    with open(ROOT_DIR / 'xray-go' / 'core' / 'core.go') as file:
-        content = file.read()
-
-    matches = re.search(
-        r'Version_x byte = (\d+)\s*Version_y byte = (\d+)\s*Version_z byte = (\d+)\s*',
-        content,
-    )
-
-    return '.'.join(matches.group(i) for i in range(1, 4))
+    return '1.8.5'
 
 
 def runCommand(command):
