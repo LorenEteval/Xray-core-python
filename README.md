@@ -1,6 +1,6 @@
 # Xray-core-python
 
-[![Build Xray-core binding](https://github.com/LorenEteval/Xray-core-python/actions/workflows/wheels.yml/badge.svg?branch=main)](https://github.com/LorenEteval/Xray-core-python/actions/workflows/wheels.yml)
+[![Deploy PyPI](https://github.com/LorenEteval/Xray-core-python/actions/workflows/deploy-pypi.yml/badge.svg?branch=main)](https://github.com/LorenEteval/Xray-core-python/actions/workflows/deploy-pypi.yml)
 
 Python bindings for [Xray-core](https://github.com/XTLS/Xray-core).
 
