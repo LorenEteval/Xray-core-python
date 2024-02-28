@@ -4,12 +4,25 @@ import (
 	"io"
 	"strings"
 
+	creflect "github.com/xtls/xray-core/common/reflect"
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/infra/conf"
 	"github.com/xtls/xray-core/main/confloader"
 )
 
-func BuildConfig(files []string, formats []string) (*core.Config, error) {
+func MergeConfigFromFiles(files []string, formats []string) (string, error) {
+	c, err := mergeConfigs(files, formats)
+	if err != nil {
+		return "", err
+	}
+
+	if j, ok := creflect.MarshalToJson(c); ok {
+		return j, nil
+	}
+	return "", newError("marshal to json failed.").AtError()
+}
+
+func mergeConfigs(files []string, formats []string) (*conf.Config, error) {
 	cf := &conf.Config{}
 	for i, file := range files {
 		newError("Reading config: ", file).AtInfo().WriteToLog()
@@ -27,7 +40,15 @@ func BuildConfig(files []string, formats []string) (*core.Config, error) {
 		}
 		cf.Override(c, file)
 	}
-	return cf.Build()
+	return cf, nil
+}
+
+func BuildConfig(files []string, formats []string) (*core.Config, error) {
+	config, err := mergeConfigs(files, formats)
+	if err != nil {
+		return nil, err
+	}
+	return config.Build()
 }
 
 func BuildConfigFromJSONString(jsonString string) (*core.Config, error) {
@@ -51,4 +72,5 @@ func init() {
 
 	core.ConfigBuilderForFiles = BuildConfig
 	core.ConfigBuilderForJson = BuildConfigFromJSONString
+	core.ConfigMergedFormFiles = MergeConfigFromFiles
 }

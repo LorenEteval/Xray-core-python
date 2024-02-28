@@ -21,8 +21,10 @@ import (
 	"runtime/debug"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/xtls/xray-core/common/cmdarg"
+	clog "github.com/xtls/xray-core/common/log"
 	"github.com/xtls/xray-core/common/platform"
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/main/commands/base"
@@ -43,7 +45,9 @@ The -format=json flag sets the format of config files.
 Default "auto".
 
 The -test flag tells Xray to test config files only, 
-without launching the server
+without launching the server.
+
+The -dump flag tells Xray to print the merged config.
 	`,
 }
 
@@ -54,6 +58,7 @@ func init() {
 var (
 	configFiles cmdarg.Arg // "Config file for Xray.", the option is customed type, parse in main
 	configDir   string
+	dump        = cmdRun.Flag.Bool("dump", false, "Dump merged config only, without launching Xray server.")
 	test        = cmdRun.Flag.Bool("test", false, "Test config file only, without launching Xray server.")
 	format      = cmdRun.Flag.String("format", "auto", "Format of input file.")
 
@@ -68,6 +73,49 @@ var (
 		return true
 	}()
 )
+
+func executeRun(cmd *base.Command, args []string) {
+	if *dump {
+		clog.ReplaceWithSeverityLogger(clog.Severity_Warning)
+		errCode := dumpConfig()
+		os.Exit(errCode)
+	}
+
+	printVersion()
+	server, err := startXray()
+	if err != nil {
+		fmt.Println("Failed to start:", err)
+		// Configuration error. Exit with a special value to prevent systemd from restarting.
+		os.Exit(23)
+	}
+
+	if *test {
+		fmt.Println("Configuration OK.")
+		os.Exit(0)
+	}
+
+	if err := server.Start(); err != nil {
+		fmt.Println("Failed to start:", err)
+		os.Exit(-1)
+	}
+	defer server.Close()
+
+	/*
+		conf.FileCache = nil
+		conf.IPCache = nil
+		conf.SiteCache = nil
+	*/
+
+	// Explicitly triggering GC to remove garbage from config loading.
+	runtime.GC()
+	debug.FreeOSMemory()
+
+	{
+		osSignals := make(chan os.Signal, 1)
+		signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
+		<-osSignals
+	}
+}
 
 //export freeCString
 func freeCString(ptr *C.char) {
@@ -112,41 +160,16 @@ func startFromJSON(jsonString string) {
 	}
 }
 
-func executeRun(cmd *base.Command, args []string) {
-	printVersion()
-	server, err := startXray()
-	if err != nil {
-		fmt.Println("Failed to start:", err)
-		// Configuration error. Exit with a special value to prevent systemd from restarting.
-		os.Exit(23)
+func dumpConfig() int {
+	files := getConfigFilePath(false)
+	if config, err := core.GetMergedConfig(files); err != nil {
+		fmt.Println(err)
+		time.Sleep(1 * time.Second)
+		return 23
+	} else {
+		fmt.Print(config)
 	}
-
-	if *test {
-		fmt.Println("Configuration OK.")
-		os.Exit(0)
-	}
-
-	if err := server.Start(); err != nil {
-		fmt.Println("Failed to start:", err)
-		os.Exit(-1)
-	}
-	defer server.Close()
-
-	/*
-		conf.FileCache = nil
-		conf.IPCache = nil
-		conf.SiteCache = nil
-	*/
-
-	// Explicitly triggering GC to remove garbage from config loading.
-	runtime.GC()
-	debug.FreeOSMemory()
-
-	{
-		osSignals := make(chan os.Signal, 1)
-		signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
-		<-osSignals
-	}
+	return 0
 }
 
 func fileExists(file string) bool {
@@ -191,12 +214,16 @@ func readConfDir(dirPath string) {
 	}
 }
 
-func getConfigFilePath() cmdarg.Arg {
+func getConfigFilePath(verbose bool) cmdarg.Arg {
 	if dirExists(configDir) {
-		log.Println("Using confdir from arg:", configDir)
+		if verbose {
+			log.Println("Using confdir from arg:", configDir)
+		}
 		readConfDir(configDir)
 	} else if envConfDir := platform.GetConfDirPath(); dirExists(envConfDir) {
-		log.Println("Using confdir from env:", envConfDir)
+		if verbose {
+			log.Println("Using confdir from env:", envConfDir)
+		}
 		readConfDir(envConfDir)
 	}
 
@@ -207,17 +234,23 @@ func getConfigFilePath() cmdarg.Arg {
 	if workingDir, err := os.Getwd(); err == nil {
 		configFile := filepath.Join(workingDir, "config.json")
 		if fileExists(configFile) {
-			log.Println("Using default config: ", configFile)
+			if verbose {
+				log.Println("Using default config: ", configFile)
+			}
 			return cmdarg.Arg{configFile}
 		}
 	}
 
 	if configFile := platform.GetConfigurationPath(); fileExists(configFile) {
-		log.Println("Using config from env: ", configFile)
+		if verbose {
+			log.Println("Using config from env: ", configFile)
+		}
 		return cmdarg.Arg{configFile}
 	}
 
-	log.Println("Using config from STDIN")
+	if verbose {
+		log.Println("Using config from STDIN")
+	}
 	return cmdarg.Arg{"stdin:"}
 }
 
@@ -244,7 +277,7 @@ func startXrayFromJSON(jsonString string) (core.Server, error) {
 }
 
 func startXray() (core.Server, error) {
-	configFiles := getConfigFilePath()
+	configFiles := getConfigFilePath(true)
 
 	// config, err := core.LoadConfig(getConfigFormat(), configFiles[0], configFiles)
 
