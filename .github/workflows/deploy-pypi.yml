@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: deploy-pypi
-      url: https://pypi.org/p/Xray-core-python
+      url: https://pypi.org/p/Xray-core
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 
