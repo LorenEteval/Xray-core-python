@@ -26,7 +26,7 @@ type ConfigBuilder func(files []string, formats []string) (*Config, error)
 
 type ConfigBuilderJson func(jsonStrings string) (*Config, error)
 
-// ConfigMerger merge multiple json configs into on config
+// ConfigsMerger merge multiple json configs into on config
 type ConfigsMerger func(files []string, formats []string) (string, error)
 
 var (
