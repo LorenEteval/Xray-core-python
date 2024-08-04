@@ -29,6 +29,7 @@ import (
 
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/dice"
 	"github.com/xtls/xray-core/common/log"
 	"github.com/xtls/xray-core/common/net"
@@ -99,7 +100,7 @@ func (h *Handler) processWireGuard(ctx context.Context, dialer internet.Dialer) 
 	}
 
 	// bind := conn.NewStdNetBind() // TODO: conn.Bind wrapper for dialer
-	bind := &netBindClient{
+	h.bind = &netBindClient{
 		netBind: netBind{
 			dns: h.dns,
 			dnsOption: dns.IPOption{
@@ -114,24 +115,23 @@ func (h *Handler) processWireGuard(ctx context.Context, dialer internet.Dialer) 
 	}
 	defer func() {
 		if err != nil {
-			_ = bind.Close()
+			_ = h.bind.Close()
 		}
 	}()
 
-	h.net, err = h.makeVirtualTun(bind)
+	h.net, err = h.makeVirtualTun()
 	if err != nil {
-		return newError("failed to create virtual tun interface").Base(err)
+		return errors.New("failed to create virtual tun interface").Base(err)
 	}
-	h.bind = bind
 	return nil
 }
 
 // Process implements OutboundHandler.Dispatch().
 func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer internet.Dialer) error {
 	outbounds := session.OutboundsFromContext(ctx)
-	ob := outbounds[len(outbounds) - 1]
+	ob := outbounds[len(outbounds)-1]
 	if !ob.Target.IsValid() {
-		return newError("target not specified")
+		return errors.New("target not specified")
 	}
 	ob.Name = "wireguard"
 	ob.CanSpliceCopy = 3
@@ -163,7 +163,7 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 			}
 		}
 		if err != nil {
-			return newError("failed to lookup DNS").Base(err)
+			return errors.New("failed to lookup DNS").Base(err)
 		} else if len(ips) == 0 {
 			return dns.ErrEmptyResponse
 		}
@@ -193,7 +193,7 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	if command == protocol.RequestCommandTCP {
 		conn, err := h.net.DialContextTCPAddrPort(ctx, addrPort)
 		if err != nil {
-			return newError("failed to create TCP connection").Base(err)
+			return errors.New("failed to create TCP connection").Base(err)
 		}
 		defer conn.Close()
 
@@ -208,7 +208,7 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	} else if command == protocol.RequestCommandUDP {
 		conn, err := h.net.DialUDPAddrPort(netip.AddrPort{}, addrPort)
 		if err != nil {
-			return newError("failed to create UDP connection").Base(err)
+			return errors.New("failed to create UDP connection").Base(err)
 		}
 		defer conn.Close()
 
@@ -230,23 +230,23 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	if err := task.Run(ctx, requestFunc, responseDonePost); err != nil {
 		common.Interrupt(link.Reader)
 		common.Interrupt(link.Writer)
-		return newError("connection ends").Base(err)
+		return errors.New("connection ends").Base(err)
 	}
 
 	return nil
 }
 
 // creates a tun interface on netstack given a configuration
-func (h *Handler) makeVirtualTun(bind *netBindClient) (Tunnel, error) {
+func (h *Handler) makeVirtualTun() (Tunnel, error) {
 	t, err := h.conf.createTun()(h.endpoints, int(h.conf.Mtu), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	bind.dnsOption.IPv4Enable = h.hasIPv4
-	bind.dnsOption.IPv6Enable = h.hasIPv6
+	h.bind.dnsOption.IPv4Enable = h.hasIPv4
+	h.bind.dnsOption.IPv6Enable = h.hasIPv6
 
-	if err = t.BuildDevice(h.createIPCRequest(bind, h.conf), bind); err != nil {
+	if err = t.BuildDevice(h.createIPCRequest(), h.bind); err != nil {
 		_ = t.Close()
 		return nil, err
 	}
@@ -254,17 +254,17 @@ func (h *Handler) makeVirtualTun(bind *netBindClient) (Tunnel, error) {
 }
 
 // serialize the config into an IPC request
-func (h *Handler) createIPCRequest(bind *netBindClient, conf *DeviceConfig) string {
+func (h *Handler) createIPCRequest() string {
 	var request strings.Builder
 
-	request.WriteString(fmt.Sprintf("private_key=%s\n", conf.SecretKey))
+	request.WriteString(fmt.Sprintf("private_key=%s\n", h.conf.SecretKey))
 
-	if !conf.IsClient {
+	if !h.conf.IsClient {
 		// placeholder, we'll handle actual port listening on Xray
 		request.WriteString("listen_port=1337\n")
 	}
 
-	for _, peer := range conf.Peers {
+	for _, peer := range h.conf.Peers {
 		if peer.PublicKey != "" {
 			request.WriteString(fmt.Sprintf("public_key=%s\n", peer.PublicKey))
 		}
@@ -275,14 +275,14 @@ func (h *Handler) createIPCRequest(bind *netBindClient, conf *DeviceConfig) stri
 
 		address, port, err := net.SplitHostPort(peer.Endpoint)
 		if err != nil {
-			newError("failed to split endpoint ", peer.Endpoint, " into address and port").AtError().WriteToLog()
+			errors.LogError(h.bind.ctx, "failed to split endpoint ", peer.Endpoint, " into address and port")
 		}
 		addr := net.ParseAddress(address)
 		if addr.Family().IsDomain() {
-			dialerIp := bind.dialer.DestIpAddress()
+			dialerIp := h.bind.dialer.DestIpAddress()
 			if dialerIp != nil {
 				addr = net.ParseAddress(dialerIp.String())
-				newError("createIPCRequest use dialer dest ip: ", addr).WriteToLog()
+				errors.LogInfo(h.bind.ctx, "createIPCRequest use dialer dest ip: ", addr)
 			} else {
 				ips, err := h.dns.LookupIP(addr.Domain(), dns.IPOption{
 					IPv4Enable: h.hasIPv4 && h.conf.preferIP4(),
@@ -297,9 +297,9 @@ func (h *Handler) createIPCRequest(bind *netBindClient, conf *DeviceConfig) stri
 					}
 				}
 				if err != nil {
-					newError("createIPCRequest failed to lookup DNS").Base(err).WriteToLog()
+					errors.LogInfoInner(h.bind.ctx, err, "createIPCRequest failed to lookup DNS")
 				} else if len(ips) == 0 {
-					newError("createIPCRequest empty lookup DNS").WriteToLog()
+					errors.LogInfo(h.bind.ctx, "createIPCRequest empty lookup DNS")
 				} else {
 					addr = net.IPAddress(ips[dice.Roll(len(ips))])
 				}

@@ -1,9 +1,11 @@
 package serial
 
 import (
+	"context"
 	"io"
 	"strings"
 
+	"github.com/xtls/xray-core/common/errors"
 	creflect "github.com/xtls/xray-core/common/reflect"
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/infra/conf"
@@ -19,20 +21,20 @@ func MergeConfigFromFiles(files []string, formats []string) (string, error) {
 	if j, ok := creflect.MarshalToJson(c); ok {
 		return j, nil
 	}
-	return "", newError("marshal to json failed.").AtError()
+	return "", errors.New("marshal to json failed.").AtError()
 }
 
 func mergeConfigs(files []string, formats []string) (*conf.Config, error) {
 	cf := &conf.Config{}
 	for i, file := range files {
-		newError("Reading config: ", file).AtInfo().WriteToLog()
+		errors.LogInfo(context.Background(), "Reading config: ", file)
 		r, err := confloader.LoadConfig(file)
 		if err != nil {
-			return nil, newError("failed to read config: ", file).Base(err)
+			return nil, errors.New("failed to read config: ", file).Base(err)
 		}
 		c, err := ReaderDecoderByFormat[formats[i]](r)
 		if err != nil {
-			return nil, newError("failed to decode config: ", file).Base(err)
+			return nil, errors.New("failed to decode config: ", file).Base(err)
 		}
 		if i == 0 {
 			*cf = *c
@@ -55,7 +57,7 @@ func BuildConfigFromJSONString(jsonString string) (*core.Config, error) {
 	cf := &conf.Config{}
 	c, err := DecodeJSONConfig(strings.NewReader(jsonString))
 	if err != nil {
-		return nil, newError("failed to decode JSON config string").Base(err)
+		return nil, errors.New("failed to decode JSON config string").Base(err)
 	}
 	*cf = *c
 	return cf.Build()
