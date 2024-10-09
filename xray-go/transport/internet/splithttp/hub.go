@@ -169,6 +169,7 @@ func (h *requestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 			return
 		}
 
+		h.config.WriteResponseHeader(writer)
 		writer.WriteHeader(http.StatusOK)
 	} else if request.Method == "GET" {
 		responseFlusher, ok := writer.(http.Flusher)
@@ -183,16 +184,19 @@ func (h *requestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 
 		// magic header instructs nginx + apache to not buffer response body
 		writer.Header().Set("X-Accel-Buffering", "no")
+		// A web-compliant header telling all middleboxes to disable caching.
+		// Should be able to prevent overloading the cache, or stop CDNs from
+		// teeing the response stream into their cache, causing slowdowns.
+		writer.Header().Set("Cache-Control", "no-store")
 		if !h.config.NoSSEHeader {
 			// magic header to make the HTTP middle box consider this as SSE to disable buffer
 			writer.Header().Set("Content-Type", "text/event-stream")
 		}
 
+		h.config.WriteResponseHeader(writer)
+
 		writer.WriteHeader(http.StatusOK)
-		// send a chunk immediately to enable CDN streaming.
-		// many CDN buffer the response headers until the origin starts sending
-		// the body, with no way to turn it off.
-		writer.Write([]byte("ok"))
+
 		responseFlusher.Flush()
 
 		downloadDone := done.New()
@@ -210,8 +214,12 @@ func (h *requestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 		h.ln.addConn(stat.Connection(&conn))
 
 		// "A ResponseWriter may not be used after [Handler.ServeHTTP] has returned."
-		<-downloadDone.Wait()
+		select {
+		case <-request.Context().Done():
+		case <-downloadDone.Wait():
+		}
 
+		conn.Close()
 	} else {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -272,7 +280,7 @@ func ListenSH(ctx context.Context, address net.Address, port net.Port, streamSet
 	handler := &requestHandler{
 		config:    shSettings,
 		host:      shSettings.Host,
-		path:      shSettings.GetNormalizedPath("", false),
+		path:      shSettings.GetNormalizedPath(),
 		ln:        l,
 		sessionMu: &sync.Mutex{},
 		sessions:  sync.Map{},
@@ -357,7 +365,13 @@ func ListenSH(ctx context.Context, address net.Address, port net.Port, streamSet
 
 // Addr implements net.Listener.Addr().
 func (ln *Listener) Addr() net.Addr {
-	return ln.listener.Addr()
+	if ln.h3listener != nil {
+		return ln.h3listener.Addr()
+	}
+	if ln.listener != nil {
+		return ln.listener.Addr()
+	}
+	return nil
 }
 
 // Close implements net.Listener.Close().

@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/base64"
 	"net"
 	"strconv"
 	"strings"
@@ -14,10 +15,11 @@ import (
 
 type FreedomConfig struct {
 	DomainStrategy string    `json:"domainStrategy"`
-	Timeout        *uint32   `json:"timeout"`
 	Redirect       string    `json:"redirect"`
 	UserLevel      uint32    `json:"userLevel"`
 	Fragment       *Fragment `json:"fragment"`
+	Noise          *Noise    `json:"noise"`
+	Noises         []*Noise  `json:"noises"`
 	ProxyProtocol  uint32    `json:"proxyProtocol"`
 }
 
@@ -25,6 +27,12 @@ type Fragment struct {
 	Packets  string `json:"packets"`
 	Length   string `json:"length"`
 	Interval string `json:"interval"`
+}
+
+type Noise struct {
+	Type   string      `json:"type"`
+	Packet string      `json:"packet"`
+	Delay  *Int32Range `json:"delay"`
 }
 
 // Build implements Buildable
@@ -144,9 +152,20 @@ func (c *FreedomConfig) Build() (proto.Message, error) {
 		}
 	}
 
-	if c.Timeout != nil {
-		config.Timeout = *c.Timeout
+	if c.Noise != nil {
+		return nil, errors.PrintRemovedFeatureError("noise = { ... }", "noises = [ { ... } ]")
 	}
+
+	if c.Noises != nil {
+		for _, n := range c.Noises {
+			NConfig, err := ParseNoise(n)
+			if err != nil {
+				return nil, err
+			}
+			config.Noises = append(config.Noises, NConfig)
+		}
+	}
+
 	config.UserLevel = c.UserLevel
 	if len(c.Redirect) > 0 {
 		host, portStr, err := net.SplitHostPort(c.Redirect)
@@ -171,4 +190,68 @@ func (c *FreedomConfig) Build() (proto.Message, error) {
 		config.ProxyProtocol = c.ProxyProtocol
 	}
 	return config, nil
+}
+
+func ParseNoise(noise *Noise) (*freedom.Noise, error) {
+	var err, err2 error
+	NConfig := new(freedom.Noise)
+
+	switch strings.ToLower(noise.Type) {
+	case "rand":
+		randValue := strings.Split(noise.Packet, "-")
+		if len(randValue) > 2 {
+			return nil, errors.New("Only 2 values are allowed for rand")
+		}
+		if len(randValue) == 2 {
+			NConfig.LengthMin, err = strconv.ParseUint(randValue[0], 10, 64)
+			NConfig.LengthMax, err2 = strconv.ParseUint(randValue[1], 10, 64)
+		}
+		if len(randValue) == 1 {
+			NConfig.LengthMin, err = strconv.ParseUint(randValue[0], 10, 64)
+			NConfig.LengthMax = NConfig.LengthMin
+		}
+		if err != nil {
+			return nil, errors.New("invalid value for rand LengthMin").Base(err)
+		}
+		if err2 != nil {
+			return nil, errors.New("invalid value for rand LengthMax").Base(err2)
+		}
+		if NConfig.LengthMin > NConfig.LengthMax {
+			NConfig.LengthMin, NConfig.LengthMax = NConfig.LengthMax, NConfig.LengthMin
+		}
+		if NConfig.LengthMin == 0 {
+			return nil, errors.New("rand lengthMin or lengthMax cannot be 0")
+		}
+
+	case "str":
+		//user input string
+		NConfig.StrNoise = []byte(strings.TrimSpace(noise.Packet))
+
+	case "base64":
+		//user input base64
+		NConfig.StrNoise, err = base64.StdEncoding.DecodeString(strings.TrimSpace(noise.Packet))
+		if err != nil {
+			return nil, errors.New("Invalid base64 string")
+		}
+
+	default:
+		return nil, errors.New("Invalid packet,only rand,str,base64 are supported")
+	}
+
+	if noise.Delay != nil {
+		if noise.Delay.From != 0 && noise.Delay.To != 0 {
+			NConfig.DelayMin = uint64(noise.Delay.From)
+			NConfig.DelayMax = uint64(noise.Delay.To)
+			if NConfig.DelayMin > NConfig.LengthMax {
+				NConfig.DelayMin, NConfig.DelayMax = NConfig.LengthMax, NConfig.DelayMin
+			}
+		} else {
+			return nil, errors.New("DelayMin or DelayMax cannot be zero")
+		}
+
+	} else {
+		NConfig.DelayMin = 0
+		NConfig.DelayMax = 0
+	}
+	return NConfig, nil
 }
