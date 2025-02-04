@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - name: Restore Geodat Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: resources
+          key: xray-geodat-
+          enableCrossOsArchive: true
+      - name: Test
+        run: go test -timeout 1h -v ./...

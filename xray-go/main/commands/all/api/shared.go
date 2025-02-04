@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,7 +40,7 @@ func setSharedFlags(cmd *base.Command) {
 
 func dialAPIServerTarget(serverAddr string, timeout int) (conn *grpc.ClientConn, ctx context.Context, close func()) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-	conn, err := grpc.DialContext(ctx, serverAddr, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		cancel()
 		return nil, nil, nil
@@ -115,7 +116,7 @@ func fetchHTTPContent(target string) ([]byte, error) {
 
 	content, err := buf.ReadAllToBytes(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read HTTP response")
+		return nil, errors.New("failed to read HTTP response")
 	}
 
 	return content, nil

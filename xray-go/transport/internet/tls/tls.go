@@ -134,12 +134,17 @@ func UClient(c net.Conn, config *tls.Config, fingerprint *utls.ClientHelloID) ne
 }
 
 func copyConfig(c *tls.Config) *utls.Config {
+	serverNameToVerify := ""
+	if r, ok := c.Rand.(*RandCarrier); ok {
+		serverNameToVerify = r.ServerNameToVerify
+	}
 	return &utls.Config{
-		RootCAs:               c.RootCAs,
-		ServerName:            c.ServerName,
-		InsecureSkipVerify:    c.InsecureSkipVerify,
-		VerifyPeerCertificate: c.VerifyPeerCertificate,
-		KeyLogWriter:          c.KeyLogWriter,
+		RootCAs:                    c.RootCAs,
+		ServerName:                 c.ServerName,
+		InsecureSkipVerify:         c.InsecureSkipVerify,
+		VerifyPeerCertificate:      c.VerifyPeerCertificate,
+		KeyLogWriter:               c.KeyLogWriter,
+		InsecureServerNameToVerify: serverNameToVerify,
 	}
 }
 
@@ -165,7 +170,7 @@ func init() {
 
 func GetFingerprint(name string) (fingerprint *utls.ClientHelloID) {
 	if name == "" {
-		return
+		return &utls.HelloChrome_Auto
 	}
 	if fingerprint = PresetFingerprints[name]; fingerprint != nil {
 		return
@@ -191,6 +196,7 @@ var PresetFingerprints = map[string]*utls.ClientHelloID{
 	"qq":         &utls.HelloQQ_Auto,
 	"random":     nil,
 	"randomized": nil,
+	"unsafe":     nil,
 }
 
 var ModernFingerprints = map[string]*utls.ClientHelloID{
