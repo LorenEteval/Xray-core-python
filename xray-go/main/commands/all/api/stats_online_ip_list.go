@@ -5,12 +5,12 @@ import (
 	"github.com/xtls/xray-core/main/commands/base"
 )
 
-var cmdOnlineStats = &base.Command{
+var cmdOnlineStatsIpList = &base.Command{
 	CustomFlags: true,
-	UsageLine:   "{{.Exec}} api statsonline [--server=127.0.0.1:8080] [-email '']",
-	Short:       "Retrieve the online session count for a user",
+	UsageLine:   "{{.Exec}} api statsonlineiplist [--server=127.0.0.1:8080] [-email '']",
+	Short:       "Retrieve a user's online IP addresses and access times",
 	Long: `
-Retrieve the current number of active sessions for a user from Xray.
+Retrieve the online IP addresses and corresponding access timestamps for a user from Xray.
 
 Arguments:
 
@@ -27,10 +27,10 @@ Example:
 
 	{{.Exec}} {{.LongName}} --server=127.0.0.1:8080 -email "xray@love.com"
 `,
-	Run: executeOnlineStats,
+	Run: executeOnlineStatsIpList,
 }
 
-func executeOnlineStats(cmd *base.Command, args []string) {
+func executeOnlineStatsIpList(cmd *base.Command, args []string) {
 	setSharedFlags(cmd)
 	email := cmd.Flag.String("email", "", "")
 	cmd.Flag.Parse(args)
@@ -43,7 +43,7 @@ func executeOnlineStats(cmd *base.Command, args []string) {
 		Name:   statName,
 		Reset_: false,
 	}
-	resp, err := client.GetStatsOnline(ctx, r)
+	resp, err := client.GetStatsOnlineIpList(ctx, r)
 	if err != nil {
 		base.Fatalf("failed to get stats: %s", err)
 	}
