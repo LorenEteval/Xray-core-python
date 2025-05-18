@@ -56,15 +56,14 @@ FUNCTIONS
 
 ## Source Code Modification
 
-This repository, including the package that distributes to pypi,
-contains [Xray-core](https://github.com/XTLS/Xray-core) source code that's been
-modified to build the binding and specific API. If without explicitly remark, the version of this package corresponds to
-the version of the origin source code tag, so the binding will have full features as the original go distribution will
-have. And due to its backward compatibility, there's no plan to generate bindings for older release of Xray-core.
+This repository—including the package distributed on PyPI—contains source code from Xray-core, which has been modified
+to build Python bindings and expose a specific API. Unless otherwise noted, the version of this package aligns with the
+corresponding tag of the original source code, ensuring that the binding provides the same full feature set as the
+official Go distribution. Due to Xray-core's backward compatibility, there are no plans to generate bindings for
+older releases.
 
-To make installation of this package easier, I didn't add the original [Xray-core](https://github.com/XTLS/Xray-core)
-source code as a submodule. To track what modifications have been made to the source code, you can compare it with the
-same version under Python binding and corresponding go repository.
+To simplify installation, the original Xray-core source code is not included as a submodule. To track the modifications
+made, you can compare the Python binding's source code against the corresponding version in the upstream Go repository.
 
 ## Tested Platform
 
@@ -72,15 +71,16 @@ Xray-core-python works on all major platform with all Python version(Python 3).
 
 Below are tested build in [github actions](https://github.com/LorenEteval/Xray-core-python/actions).
 
-| Platform     | Python 3.7-Python 3.11 |
+| Platform     | Python 3.8-Python 3.13 |
 |--------------|:----------------------:|
-| ubuntu 20.04 |   :heavy_check_mark:   |
 | ubuntu 22.04 |   :heavy_check_mark:   |
+| ubuntu 24.04 |   :heavy_check_mark:   |
 | windows-2019 |   :heavy_check_mark:   |
 | windows-2022 |   :heavy_check_mark:   |
-| macos-11     |   :heavy_check_mark:   |
-| macos-12     |   :heavy_check_mark:   |
+| windows-2025 |   :heavy_check_mark:   |
 | macos-13     |   :heavy_check_mark:   |
+| macos-14     |   :heavy_check_mark:   |
+| macos-15     |   :heavy_check_mark:   |
 
 ## License
 
