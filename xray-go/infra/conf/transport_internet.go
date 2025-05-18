@@ -334,7 +334,7 @@ func (c *SplitHTTPConfig) Build() (proto.Message, error) {
 
 func readFileOrString(f string, s []string) ([]byte, error) {
 	if len(f) > 0 {
-		return filesystem.ReadFile(f)
+		return filesystem.ReadCert(f)
 	}
 	if len(s) > 0 {
 		return []byte(strings.Join(s, "\n")), nil
@@ -691,10 +691,12 @@ func (p TransportProtocol) Build() (string, error) {
 }
 
 type CustomSockoptConfig struct {
-	Level string `json:"level"`
-	Opt   string `json:"opt"`
-	Value string `json:"value"`
-	Type  string `json:"type"`
+	Syetem  string `json:"system"`
+	Network string `json:"network"`
+	Level   string `json:"level"`
+	Opt     string `json:"opt"`
+	Value   string `json:"value"`
+	Type    string `json:"type"`
 }
 
 type SocketConfig struct {
@@ -777,10 +779,12 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 
 	for _, copt := range c.CustomSockopt {
 		customSockopt := &internet.CustomSockopt{
-			Level: copt.Level,
-			Opt:   copt.Opt,
-			Value: copt.Value,
-			Type:  copt.Type,
+			System:  copt.Syetem,
+			Network: copt.Network,
+			Level:   copt.Level,
+			Opt:     copt.Opt,
+			Value:   copt.Value,
+			Type:    copt.Type,
 		}
 		customSockopts = append(customSockopts, customSockopt)
 	}

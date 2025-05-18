@@ -20,41 +20,44 @@ func (*Client) Start() error { return nil }
 func (*Client) Close() error { return nil }
 
 // LookupIP implements Client.
-func (*Client) LookupIP(host string, option dns.IPOption) ([]net.IP, error) {
+func (*Client) LookupIP(host string, option dns.IPOption) ([]net.IP, uint32, error) {
 	ips, err := net.LookupIP(host)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	parsedIPs := make([]net.IP, 0, len(ips))
 	ipv4 := make([]net.IP, 0, len(ips))
 	ipv6 := make([]net.IP, 0, len(ips))
 	for _, ip := range ips {
 		parsed := net.IPAddress(ip)
-		if parsed != nil {
-			parsedIPs = append(parsedIPs, parsed.IP())
+		if parsed == nil {
+			continue
 		}
-		if len(ip) == net.IPv4len {
-			ipv4 = append(ipv4, ip)
-		}
-		if len(ip) == net.IPv6len {
-			ipv6 = append(ipv6, ip)
+		parsedIP := parsed.IP()
+		parsedIPs = append(parsedIPs, parsedIP)
+
+		if len(parsedIP) == net.IPv4len {
+			ipv4 = append(ipv4, parsedIP)
+		} else {
+			ipv6 = append(ipv6, parsedIP)
 		}
 	}
+
 	switch {
 	case option.IPv4Enable && option.IPv6Enable:
 		if len(parsedIPs) > 0 {
-			return parsedIPs, nil
+			return parsedIPs, dns.DefaultTTL, nil
 		}
 	case option.IPv4Enable:
 		if len(ipv4) > 0 {
-			return ipv4, nil
+			return ipv4, dns.DefaultTTL, nil
 		}
 	case option.IPv6Enable:
 		if len(ipv6) > 0 {
-			return ipv6, nil
+			return ipv6, dns.DefaultTTL, nil
 		}
 	}
-	return nil, dns.ErrEmptyResponse
+	return nil, 0, dns.ErrEmptyResponse
 }
 
 // New create a new dns.Client that queries localhost for DNS.

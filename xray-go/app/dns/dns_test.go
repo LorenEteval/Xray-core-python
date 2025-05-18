@@ -76,6 +76,9 @@ func (*staticHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		case q.Name == "notexist.google.com." && q.Qtype == dns.TypeAAAA:
 			ans.MsgHdr.Rcode = dns.RcodeNameError
 
+		case q.Name == "notexist.google.com." && q.Qtype == dns.TypeA:
+			ans.MsgHdr.Rcode = dns.RcodeNameError
+
 		case q.Name == "hostname." && q.Qtype == dns.TypeA:
 			rr, _ := dns.NewRR("hostname. IN A 127.0.0.1")
 			ans.Answer = append(ans.Answer, rr)
@@ -117,7 +120,6 @@ func TestUDPServerSubnet(t *testing.T) {
 		Handler: &staticHandler{},
 		UDPSize: 1200,
 	}
-
 	go dnsServer.ListenAndServe()
 	time.Sleep(time.Second)
 
@@ -155,7 +157,7 @@ func TestUDPServerSubnet(t *testing.T) {
 
 	client := v.GetFeature(feature_dns.ClientType()).(feature_dns.Client)
 
-	ips, err := client.LookupIP("google.com", feature_dns.IPOption{
+	ips, _, err := client.LookupIP("google.com", feature_dns.IPOption{
 		IPv4Enable: true,
 		IPv6Enable: true,
 		FakeEnable: false,
@@ -216,7 +218,7 @@ func TestUDPServer(t *testing.T) {
 	client := v.GetFeature(feature_dns.ClientType()).(feature_dns.Client)
 
 	{
-		ips, err := client.LookupIP("google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -231,7 +233,7 @@ func TestUDPServer(t *testing.T) {
 	}
 
 	{
-		ips, err := client.LookupIP("facebook.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("facebook.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -246,7 +248,7 @@ func TestUDPServer(t *testing.T) {
 	}
 
 	{
-		_, err := client.LookupIP("notexist.google.com", feature_dns.IPOption{
+		_, _, err := client.LookupIP("notexist.google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -260,7 +262,7 @@ func TestUDPServer(t *testing.T) {
 	}
 
 	{
-		ips, err := client.LookupIP("ipv4only.google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("ipv4only.google.com", feature_dns.IPOption{
 			IPv4Enable: false,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -276,7 +278,7 @@ func TestUDPServer(t *testing.T) {
 	dnsServer.Shutdown()
 
 	{
-		ips, err := client.LookupIP("google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -357,7 +359,7 @@ func TestPrioritizedDomain(t *testing.T) {
 	startTime := time.Now()
 
 	{
-		ips, err := client.LookupIP("google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -423,7 +425,7 @@ func TestUDPServerIPv6(t *testing.T) {
 
 	client := v.GetFeature(feature_dns.ClientType()).(feature_dns.Client)
 	{
-		ips, err := client.LookupIP("ipv6.google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("ipv6.google.com", feature_dns.IPOption{
 			IPv4Enable: false,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -492,7 +494,7 @@ func TestStaticHostDomain(t *testing.T) {
 	client := v.GetFeature(feature_dns.ClientType()).(feature_dns.Client)
 
 	{
-		ips, err := client.LookupIP("example.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("example.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -603,7 +605,7 @@ func TestIPMatch(t *testing.T) {
 	startTime := time.Now()
 
 	{
-		ips, err := client.LookupIP("google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -726,7 +728,7 @@ func TestLocalDomain(t *testing.T) {
 	startTime := time.Now()
 
 	{ // Will match dotless:
-		ips, err := client.LookupIP("hostname", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("hostname", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -741,7 +743,7 @@ func TestLocalDomain(t *testing.T) {
 	}
 
 	{ // Will match domain:local
-		ips, err := client.LookupIP("hostname.local", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("hostname.local", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -756,7 +758,7 @@ func TestLocalDomain(t *testing.T) {
 	}
 
 	{ // Will match static ip
-		ips, err := client.LookupIP("hostnamestatic", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("hostnamestatic", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -771,7 +773,7 @@ func TestLocalDomain(t *testing.T) {
 	}
 
 	{ // Will match domain replacing
-		ips, err := client.LookupIP("hostnamealias", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("hostnamealias", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -785,8 +787,8 @@ func TestLocalDomain(t *testing.T) {
 		}
 	}
 
-	{ // Will match dotless:localhost, but not expectIPs: 127.0.0.2, 127.0.0.3, then matches at dotless:
-		ips, err := client.LookupIP("localhost", feature_dns.IPOption{
+	{ // Will match dotless:localhost, but not expectedIPs: 127.0.0.2, 127.0.0.3, then matches at dotless:
+		ips, _, err := client.LookupIP("localhost", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -800,8 +802,8 @@ func TestLocalDomain(t *testing.T) {
 		}
 	}
 
-	{ // Will match dotless:localhost, and expectIPs: 127.0.0.2, 127.0.0.3
-		ips, err := client.LookupIP("localhost-a", feature_dns.IPOption{
+	{ // Will match dotless:localhost, and expectedIPs: 127.0.0.2, 127.0.0.3
+		ips, _, err := client.LookupIP("localhost-a", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -815,8 +817,8 @@ func TestLocalDomain(t *testing.T) {
 		}
 	}
 
-	{ // Will match dotless:localhost, and expectIPs: 127.0.0.2, 127.0.0.3
-		ips, err := client.LookupIP("localhost-b", feature_dns.IPOption{
+	{ // Will match dotless:localhost, and expectedIPs: 127.0.0.2, 127.0.0.3
+		ips, _, err := client.LookupIP("localhost-b", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -831,7 +833,7 @@ func TestLocalDomain(t *testing.T) {
 	}
 
 	{ // Will match dotless:
-		ips, err := client.LookupIP("Mijia Cloud", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("Mijia Cloud", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -997,7 +999,7 @@ func TestMultiMatchPrioritizedDomain(t *testing.T) {
 	startTime := time.Now()
 
 	{ // Will match server 1,2 and server 1 returns expected ip
-		ips, err := client.LookupIP("google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -1012,7 +1014,7 @@ func TestMultiMatchPrioritizedDomain(t *testing.T) {
 	}
 
 	{ // Will match server 1,2 and server 1 returns unexpected ip, then server 2 returns expected one
-		ips, err := client.LookupIP("ipv6.google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("ipv6.google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: false,
 			FakeEnable: false,
@@ -1027,7 +1029,7 @@ func TestMultiMatchPrioritizedDomain(t *testing.T) {
 	}
 
 	{ // Will match server 3,1,2 and server 3 returns expected one
-		ips, err := client.LookupIP("api.google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("api.google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,
@@ -1042,7 +1044,7 @@ func TestMultiMatchPrioritizedDomain(t *testing.T) {
 	}
 
 	{ // Will match server 4,3,1,2 and server 4 returns expected one
-		ips, err := client.LookupIP("v2.api.google.com", feature_dns.IPOption{
+		ips, _, err := client.LookupIP("v2.api.google.com", feature_dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: false,

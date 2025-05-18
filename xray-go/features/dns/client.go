@@ -21,11 +21,7 @@ type Client interface {
 	features.Feature
 
 	// LookupIP returns IP address for the given domain. IPs may contain IPv4 and/or IPv6 addresses.
-	LookupIP(domain string, option IPOption) ([]net.IP, error)
-}
-
-type HostsLookup interface {
-	LookupHosts(domain string) *net.Address
+	LookupIP(domain string, option IPOption) ([]net.IP, uint32, error)
 }
 
 // ClientType returns the type of Client interface. Can be used for implementing common.HasType.
@@ -37,6 +33,8 @@ func ClientType() interface{} {
 
 // ErrEmptyResponse indicates that DNS query succeeded but no answer was returned.
 var ErrEmptyResponse = errors.New("empty response")
+
+const DefaultTTL = 300
 
 type RCodeError uint16
 

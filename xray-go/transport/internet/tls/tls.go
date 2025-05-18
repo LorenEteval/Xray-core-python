@@ -206,6 +206,7 @@ var ModernFingerprints = map[string]*utls.ClientHelloID{
 	"hellochrome_102":         &utls.HelloChrome_102,
 	"hellochrome_106_shuffle": &utls.HelloChrome_106_Shuffle,
 	"hellochrome_120":         &utls.HelloChrome_120,
+	"hellochrome_131":         &utls.HelloChrome_131,
 	"helloios_13":             &utls.HelloIOS_13,
 	"helloios_14":             &utls.HelloIOS_14,
 	"helloedge_85":            &utls.HelloEdge_85,
@@ -240,4 +241,12 @@ var OtherFingerprints = map[string]*utls.ClientHelloID{
 	"hello360_auto":          &utls.Hello360_Auto,
 	"hello360_7_5":           &utls.Hello360_7_5,
 	"helloqq_auto":           &utls.HelloQQ_Auto,
+
+	// Chrome betas'
+	"hellochrome_100_psk":              &utls.HelloChrome_100_PSK,
+	"hellochrome_112_psk_shuf":         &utls.HelloChrome_112_PSK_Shuf,
+	"hellochrome_114_padding_psk_shuf": &utls.HelloChrome_114_Padding_PSK_Shuf,
+	"hellochrome_115_pq":               &utls.HelloChrome_115_PQ,
+	"hellochrome_115_pq_psk":           &utls.HelloChrome_115_PQ_PSK,
+	"hellochrome_120_pq":               &utls.HelloChrome_120_PQ,
 }

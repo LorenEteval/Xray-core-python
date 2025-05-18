@@ -38,6 +38,7 @@
   - [teddysun/xray](https://hub.docker.com/r/teddysun/xray)
   - [wulabing/xray_docker](https://github.com/wulabing/xray_docker)
 - Web Panel - **WARNING: Please DO NOT USE plain HTTP panels like 3X-UI**, as they are believed to be bribed by Iran GFW for supporting plain HTTP by default and refused to change (https://github.com/XTLS/Xray-core/pull/3884#issuecomment-2439595331), which has already put many users' data security in danger in the past few years. **If you are already using 3X-UI, please switch to the following panels, which are verified to support HTTPS and SSH port forwarding only:**
+  - [Remnawave](https://github.com/remnawave/panel)
   - [Marzban](https://github.com/Gozargah/Marzban)
   - [Xray-UI](https://github.com/qist/xray-ui)
   - [Hiddify](https://github.com/hiddify/Hiddify-Manager)
@@ -101,6 +102,7 @@
 
 - iOS & macOS arm64
   - [Shadowrocket](https://apps.apple.com/app/shadowrocket/id932747118)
+  - [Loon](https://apps.apple.com/us/app/loon/id1373567447)
 - Xray Tools
   - [xray-knife](https://github.com/lilendian0x00/xray-knife)
   - [xray-checker](https://github.com/kutovoys/xray-checker)
@@ -113,10 +115,9 @@
 - [XrayR](https://github.com/XrayR-project/XrayR)
   - [XrayR-release](https://github.com/XrayR-project/XrayR-release)
   - [XrayR-V2Board](https://github.com/missuo/XrayR-V2Board)
-- [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
-  - [clashN](https://github.com/2dust/clashN)
-  - [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid)
-- [sing-box](https://github.com/SagerNet/sing-box)
+- Cores
+  - [mihomo](https://github.com/MetaCubeX/mihomo)
+  - [sing-box](https://github.com/SagerNet/sing-box)
 
 ## Contributing
 

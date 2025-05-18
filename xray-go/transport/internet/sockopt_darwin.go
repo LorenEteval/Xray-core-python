@@ -1,8 +1,12 @@
 package internet
 
 import (
-	network "net"
+	"context"
+	gonet "net"
 	"os"
+	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -108,12 +112,95 @@ func applyOutboundSocketOptions(network string, address string, fd uintptr, conf
 				return err
 			}
 		}
-		if config.Interface != "" {
-			InterfaceIndex := getInterfaceIndexByName(config.Interface)
-			if InterfaceIndex != 0 {
-				if err := unix.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_BOUND_IF, InterfaceIndex); err != nil {
-					return errors.New("failed to set Interface").Base(err)
+
+		if config.TcpKeepAliveIdle > 0 || config.TcpKeepAliveInterval > 0 {
+			if config.TcpKeepAliveIdle > 0 {
+				if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_TCP, unix.TCP_KEEPALIVE, int(config.TcpKeepAliveInterval)); err != nil {
+					return errors.New("failed to set TCP_KEEPINTVL", err)
 				}
+			}
+			if config.TcpKeepAliveInterval > 0 {
+				if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_TCP, sysTCP_KEEPINTVL, int(config.TcpKeepAliveIdle)); err != nil {
+					return errors.New("failed to set TCP_KEEPIDLE", err)
+				}
+			}
+			if err := unix.SetsockoptInt(int(fd), unix.SOL_SOCKET, unix.SO_KEEPALIVE, 1); err != nil {
+				return errors.New("failed to set SO_KEEPALIVE", err)
+			}
+		} else if config.TcpKeepAliveInterval < 0 || config.TcpKeepAliveIdle < 0 {
+			if err := unix.SetsockoptInt(int(fd), unix.SOL_SOCKET, unix.SO_KEEPALIVE, 0); err != nil {
+				return errors.New("failed to unset SO_KEEPALIVE", err)
+			}
+		}
+	}
+
+	if config.Interface != "" {
+		iface, err := gonet.InterfaceByName(config.Interface)
+
+		if err != nil {
+			return errors.New("failed to get interface ", config.Interface).Base(err)
+		}
+		if network == "tcp6" || network == "udp6" {
+			if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_IPV6, unix.IPV6_BOUND_IF, iface.Index); err != nil {
+				return errors.New("failed to set IPV6_BOUND_IF").Base(err)
+			}
+		} else {
+			if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_IP, unix.IP_BOUND_IF, iface.Index); err != nil {
+				return errors.New("failed to set IP_BOUND_IF").Base(err)
+			}
+		}
+	}
+
+	if len(config.CustomSockopt) > 0 {
+		for _, custom := range config.CustomSockopt {
+			if custom.System != "" && custom.System != runtime.GOOS {
+				errors.LogDebug(context.Background(), "CustomSockopt system not match: ", "want ", custom.System, " got ", runtime.GOOS)
+				continue
+			}
+			// Skip unwanted network type
+			// network might be tcp4 or tcp6
+			// use HasPrefix so that "tcp" can match tcp4/6 with "tcp" if user want to control all tcp (udp is also the same)
+			// if it is empty, strings.HasPrefix will always return true to make it apply for all networks
+			if !strings.HasPrefix(network, custom.Network) {
+				continue
+			}
+			var level = 0x6 // default TCP
+			var opt int
+			if len(custom.Opt) == 0 {
+				return errors.New("No opt!")
+			} else {
+				opt, _ = strconv.Atoi(custom.Opt)
+			}
+			if custom.Level != "" {
+				level, _ = strconv.Atoi(custom.Level)
+			}
+			if custom.Type == "int" {
+				value, _ := strconv.Atoi(custom.Value)
+				if err := syscall.SetsockoptInt(int(fd), level, opt, value); err != nil {
+					return errors.New("failed to set CustomSockoptInt", opt, value, err)
+				}
+			} else if custom.Type == "str" {
+				if err := syscall.SetsockoptString(int(fd), level, opt, custom.Value); err != nil {
+					return errors.New("failed to set CustomSockoptString", opt, custom.Value, err)
+				}
+			} else {
+				return errors.New("unknown CustomSockopt type:", custom.Type)
+			}
+		}
+	}
+
+	return nil
+}
+
+func applyInboundSocketOptions(network string, fd uintptr, config *SocketConfig) error {
+	if isTCPSocket(network) {
+		tfo := config.ParseTFOValue()
+		if tfo > 0 {
+			tfo = TCP_FASTOPEN_SERVER
+		}
+		if tfo >= 0 {
+			if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_TCP, unix.TCP_FASTOPEN, tfo); err != nil {
+				return err
 			}
 		}
 
@@ -138,46 +225,63 @@ func applyOutboundSocketOptions(network string, address string, fd uintptr, conf
 		}
 	}
 
-	return nil
-}
+	if config.Interface != "" {
+		iface, err := gonet.InterfaceByName(config.Interface)
 
-func applyInboundSocketOptions(network string, fd uintptr, config *SocketConfig) error {
-	if isTCPSocket(network) {
-		tfo := config.ParseTFOValue()
-		if tfo > 0 {
-			tfo = TCP_FASTOPEN_SERVER
+		if err != nil {
+			return errors.New("failed to get interface ", config.Interface).Base(err)
 		}
-		if tfo >= 0 {
-			if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_TCP, unix.TCP_FASTOPEN, tfo); err != nil {
-				return err
+		if network == "tcp6" || network == "udp6" {
+			if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_IPV6, unix.IPV6_BOUND_IF, iface.Index); err != nil {
+				return errors.New("failed to set IPV6_BOUND_IF").Base(err)
+			}
+		} else {
+			if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_IP, unix.IP_BOUND_IF, iface.Index); err != nil {
+				return errors.New("failed to set IP_BOUND_IF").Base(err)
 			}
 		}
-		if config.Interface != "" {
-			InterfaceIndex := getInterfaceIndexByName(config.Interface)
-			if InterfaceIndex != 0 {
-				if err := unix.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_BOUND_IF, InterfaceIndex); err != nil {
-					return errors.New("failed to set Interface").Base(err)
-				}
-			}
-		}
+	}
 
-		if config.TcpKeepAliveIdle > 0 || config.TcpKeepAliveInterval > 0 {
-			if config.TcpKeepAliveIdle > 0 {
-				if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_TCP, unix.TCP_KEEPALIVE, int(config.TcpKeepAliveInterval)); err != nil {
-					return errors.New("failed to set TCP_KEEPINTVL", err)
+	if config.V6Only {
+		if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_IPV6, unix.IPV6_V6ONLY, 1); err != nil {
+			return errors.New("failed to set IPV6_V6ONLY").Base(err)
+		}
+	}
+
+	if len(config.CustomSockopt) > 0 {
+		for _, custom := range config.CustomSockopt {
+			if custom.System != "" && custom.System != runtime.GOOS {
+				errors.LogDebug(context.Background(), "CustomSockopt system not match: ", "want ", custom.System, " got ", runtime.GOOS)
+				continue
+			}
+			// Skip unwanted network type
+			// network might be tcp4 or tcp6
+			// use HasPrefix so that "tcp" can match tcp4/6 with "tcp" if user want to control all tcp (udp is also the same)
+			// if it is empty, strings.HasPrefix will always return true to make it apply for all networks
+			if !strings.HasPrefix(network, custom.Network) {
+				continue
+			}
+			var level = 0x6 // default TCP
+			var opt int
+			if len(custom.Opt) == 0 {
+				return errors.New("No opt!")
+			} else {
+				opt, _ = strconv.Atoi(custom.Opt)
+			}
+			if custom.Level != "" {
+				level, _ = strconv.Atoi(custom.Level)
+			}
+			if custom.Type == "int" {
+				value, _ := strconv.Atoi(custom.Value)
+				if err := syscall.SetsockoptInt(int(fd), level, opt, value); err != nil {
+					return errors.New("failed to set CustomSockoptInt", opt, value, err)
 				}
-			}
-			if config.TcpKeepAliveInterval > 0 {
-				if err := unix.SetsockoptInt(int(fd), unix.IPPROTO_TCP, sysTCP_KEEPINTVL, int(config.TcpKeepAliveIdle)); err != nil {
-					return errors.New("failed to set TCP_KEEPIDLE", err)
+			} else if custom.Type == "str" {
+				if err := syscall.SetsockoptString(int(fd), level, opt, custom.Value); err != nil {
+					return errors.New("failed to set CustomSockoptString", opt, custom.Value, err)
 				}
-			}
-			if err := unix.SetsockoptInt(int(fd), unix.SOL_SOCKET, unix.SO_KEEPALIVE, 1); err != nil {
-				return errors.New("failed to set SO_KEEPALIVE", err)
-			}
-		} else if config.TcpKeepAliveInterval < 0 || config.TcpKeepAliveIdle < 0 {
-			if err := unix.SetsockoptInt(int(fd), unix.SOL_SOCKET, unix.SO_KEEPALIVE, 0); err != nil {
-				return errors.New("failed to unset SO_KEEPALIVE", err)
+			} else {
+				return errors.New("unknown CustomSockopt type:", custom.Type)
 			}
 		}
 	}
@@ -223,25 +327,4 @@ func setReusePort(fd uintptr) error {
 		return errors.New("failed to set SO_REUSEPORT").Base(err).AtWarning()
 	}
 	return nil
-}
-func getInterfaceIndexByName(name string) int {
-	ifaces, err := network.Interfaces()
-	if err == nil {
-		for _, iface := range ifaces {
-			if (iface.Flags&network.FlagUp == network.FlagUp) && (iface.Flags&network.FlagLoopback != network.FlagLoopback) {
-				addrs, _ := iface.Addrs()
-				for _, addr := range addrs {
-					if ipnet, ok := addr.(*network.IPNet); ok && !ipnet.IP.IsLoopback() {
-						if ipnet.IP.To4() != nil {
-							if iface.Name == name {
-								return iface.Index
-							}
-						}
-					}
-				}
-			}
-
-		}
-	}
-	return 0
 }

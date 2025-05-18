@@ -59,24 +59,28 @@ func (d *DefaultSystemDialer) Dial(ctx context.Context, src net.Address, dest ne
 				Port: 0,
 			}
 		}
-		packetConn, err := ListenSystemPacket(ctx, srcAddr, sockopt)
-		if err != nil {
-			return nil, err
-		}
+		var lc net.ListenConfig
 		destAddr, err := net.ResolveUDPAddr("udp", dest.NetAddr())
 		if err != nil {
 			return nil, err
 		}
-		if sockopt != nil {
-			sys, err := packetConn.(*net.UDPConn).SyscallConn()
-			if err != nil {
-				return nil, err
+		lc.Control = func(network, address string, c syscall.RawConn) error {
+			for _, ctl := range d.controllers {
+				if err := ctl(network, address, c); err != nil {
+					errors.LogInfoInner(ctx, err, "failed to apply external controller")
+				}
 			}
-			sys.Control(func(fd uintptr) {
-				if err := applyOutboundSocketOptions("udp", dest.NetAddr(), fd, sockopt); err != nil {
-					errors.LogInfo(ctx, err, "failed to apply socket options")
+			return c.Control(func(fd uintptr) {
+				if sockopt != nil {
+					if err := applyOutboundSocketOptions(network, destAddr.String(), fd, sockopt); err != nil {
+						errors.LogInfo(ctx, err, "failed to apply socket options")
+					}
 				}
 			})
+		}
+		packetConn, err := lc.ListenPacket(ctx, srcAddr.Network(), srcAddr.String())
+		if err != nil {
+			return nil, err
 		}
 		return &PacketConnWrapper{
 			Conn: packetConn,

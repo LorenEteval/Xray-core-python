@@ -12,15 +12,20 @@ import (
 )
 
 type NameServerConfig struct {
-	Address       *Address   `json:"address"`
-	ClientIP      *Address   `json:"clientIp"`
-	Port          uint16     `json:"port"`
-	SkipFallback  bool       `json:"skipFallback"`
-	Domains       []string   `json:"domains"`
-	ExpectIPs     StringList `json:"expectIps"`
-	QueryStrategy string     `json:"queryStrategy"`
+	Address            *Address   `json:"address"`
+	ClientIP           *Address   `json:"clientIp"`
+	Port               uint16     `json:"port"`
+	SkipFallback       bool       `json:"skipFallback"`
+	Domains            []string   `json:"domains"`
+	ExpectedIPs        StringList `json:"expectedIPs"`
+	ExpectIPs          StringList `json:"expectIPs"`
+	QueryStrategy      string     `json:"queryStrategy"`
+	AllowUnexpectedIPs bool       `json:"allowUnexpectedIps"`
+	Tag                string     `json:"tag"`
+	TimeoutMs          uint64     `json:"timeoutMs"`
 }
 
+// UnmarshalJSON implements encoding/json.Unmarshaler.UnmarshalJSON
 func (c *NameServerConfig) UnmarshalJSON(data []byte) error {
 	var address Address
 	if err := json.Unmarshal(data, &address); err == nil {
@@ -29,13 +34,17 @@ func (c *NameServerConfig) UnmarshalJSON(data []byte) error {
 	}
 
 	var advanced struct {
-		Address       *Address   `json:"address"`
-		ClientIP      *Address   `json:"clientIp"`
-		Port          uint16     `json:"port"`
-		SkipFallback  bool       `json:"skipFallback"`
-		Domains       []string   `json:"domains"`
-		ExpectIPs     StringList `json:"expectIps"`
-		QueryStrategy string     `json:"queryStrategy"`
+		Address            *Address   `json:"address"`
+		ClientIP           *Address   `json:"clientIp"`
+		Port               uint16     `json:"port"`
+		SkipFallback       bool       `json:"skipFallback"`
+		Domains            []string   `json:"domains"`
+		ExpectedIPs        StringList `json:"expectedIPs"`
+		ExpectIPs          StringList `json:"expectIPs"`
+		QueryStrategy      string     `json:"queryStrategy"`
+		AllowUnexpectedIPs bool       `json:"allowUnexpectedIps"`
+		Tag                string     `json:"tag"`
+		TimeoutMs          uint64     `json:"timeoutMs"`
 	}
 	if err := json.Unmarshal(data, &advanced); err == nil {
 		c.Address = advanced.Address
@@ -43,8 +52,12 @@ func (c *NameServerConfig) UnmarshalJSON(data []byte) error {
 		c.Port = advanced.Port
 		c.SkipFallback = advanced.SkipFallback
 		c.Domains = advanced.Domains
+		c.ExpectedIPs = advanced.ExpectedIPs
 		c.ExpectIPs = advanced.ExpectIPs
 		c.QueryStrategy = advanced.QueryStrategy
+		c.AllowUnexpectedIPs = advanced.AllowUnexpectedIPs
+		c.Tag = advanced.Tag
+		c.TimeoutMs = advanced.TimeoutMs
 		return nil
 	}
 
@@ -92,9 +105,13 @@ func (c *NameServerConfig) Build() (*dns.NameServer, error) {
 		})
 	}
 
-	geoipList, err := ToCidrList(c.ExpectIPs)
+	var expectedIPs = c.ExpectedIPs
+	if len(expectedIPs) == 0 {
+		expectedIPs = c.ExpectIPs
+	}
+	geoipList, err := ToCidrList(expectedIPs)
 	if err != nil {
-		return nil, errors.New("invalid IP rule: ", c.ExpectIPs).Base(err)
+		return nil, errors.New("invalid IP rule: ", expectedIPs).Base(err)
 	}
 
 	var myClientIP []byte
@@ -111,12 +128,15 @@ func (c *NameServerConfig) Build() (*dns.NameServer, error) {
 			Address: c.Address.Build(),
 			Port:    uint32(c.Port),
 		},
-		ClientIp:          myClientIP,
-		SkipFallback:      c.SkipFallback,
-		PrioritizedDomain: domains,
-		Geoip:             geoipList,
-		OriginalRules:     originalRules,
-		QueryStrategy:     resolveQueryStrategy(c.QueryStrategy),
+		ClientIp:           myClientIP,
+		SkipFallback:       c.SkipFallback,
+		PrioritizedDomain:  domains,
+		Geoip:              geoipList,
+		OriginalRules:      originalRules,
+		QueryStrategy:      resolveQueryStrategy(c.QueryStrategy),
+		AllowUnexpectedIPs: c.AllowUnexpectedIPs,
+		Tag:                c.Tag,
+		TimeoutMs:          c.TimeoutMs,
 	}, nil
 }
 
@@ -142,6 +162,18 @@ type DNSConfig struct {
 type HostAddress struct {
 	addr  *Address
 	addrs []*Address
+}
+
+// MarshalJSON implements encoding/json.Marshaler.MarshalJSON
+func (h *HostAddress) MarshalJSON() ([]byte, error) {
+	if (h.addr != nil) != (h.addrs != nil) {
+		if h.addr != nil {
+			return json.Marshal(h.addr)
+		} else if h.addrs != nil {
+			return json.Marshal(h.addrs)
+		}
+	}
+	return nil, errors.New("unexpected config state")
 }
 
 // UnmarshalJSON implements encoding/json.Unmarshaler.UnmarshalJSON
@@ -187,6 +219,11 @@ func getHostMapping(ha *HostAddress) *dns.Config_HostMapping {
 	return &dns.Config_HostMapping{
 		Ip: ips,
 	}
+}
+
+// MarshalJSON implements encoding/json.Marshaler.MarshalJSON
+func (m *HostsWrapper) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Hosts)
 }
 
 // UnmarshalJSON implements encoding/json.Unmarshaler.UnmarshalJSON

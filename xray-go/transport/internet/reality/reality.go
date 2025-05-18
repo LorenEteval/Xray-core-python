@@ -30,13 +30,9 @@ import (
 	"github.com/xtls/xray-core/common/net"
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/transport/internet/tls"
-	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/net/http2"
 )
-
-//go:linkname aesgcmPreferred github.com/refraction-networking/utls.aesgcmPreferred
-func aesgcmPreferred(ciphers []uint16) bool
 
 type Conn struct {
 	*reality.Conn
@@ -137,23 +133,18 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 		if err != nil {
 			return nil, errors.New("REALITY: publicKey == nil")
 		}
-		if uConn.HandshakeState.State13.EcdheKey == nil {
+		if uConn.HandshakeState.State13.KeyShareKeys.Ecdhe == nil {
 			return nil, errors.New("Current fingerprint ", uConn.ClientHelloID.Client, uConn.ClientHelloID.Version, " does not support TLS 1.3, REALITY handshake cannot establish.")
 		}
-		uConn.AuthKey, _ = uConn.HandshakeState.State13.EcdheKey.ECDH(publicKey)
+		uConn.AuthKey, _ = uConn.HandshakeState.State13.KeyShareKeys.Ecdhe.ECDH(publicKey)
 		if uConn.AuthKey == nil {
 			return nil, errors.New("REALITY: SharedKey == nil")
 		}
 		if _, err := hkdf.New(sha256.New, uConn.AuthKey, hello.Random[:20], []byte("REALITY")).Read(uConn.AuthKey); err != nil {
 			return nil, err
 		}
-		var aead cipher.AEAD
-		if aesgcmPreferred(hello.CipherSuites) {
-			block, _ := aes.NewCipher(uConn.AuthKey)
-			aead, _ = cipher.NewGCM(block)
-		} else {
-			aead, _ = chacha20poly1305.New(uConn.AuthKey)
-		}
+		block, _ := aes.NewCipher(uConn.AuthKey)
+		aead, _ := cipher.NewGCM(block)
 		if config.Show {
 			errors.LogInfo(ctx, fmt.Sprintf("REALITY localAddr: %v\tuConn.AuthKey[:16]: %v\tAEAD: %T\n", localAddr, uConn.AuthKey[:16], aead))
 		}
