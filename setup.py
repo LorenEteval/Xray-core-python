@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
-import re
 import pathlib
 import platform
 import subprocess
@@ -14,7 +13,7 @@ CMAKE_BUILD_CACHE = 'CMakeBuildCache'
 
 
 def getXrayCoreVersion():
-    return '1.8.24.4'
+    return '1.8.24.5'
 
 
 def runCommand(command):
