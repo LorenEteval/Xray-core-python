@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	gotls "crypto/tls"
+	"encoding/base64"
 	"reflect"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -24,6 +26,7 @@ import (
 	"github.com/xtls/xray-core/proxy"
 	"github.com/xtls/xray-core/proxy/vless"
 	"github.com/xtls/xray-core/proxy/vless/encoding"
+	"github.com/xtls/xray-core/proxy/vless/encryption"
 	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/internet"
 	"github.com/xtls/xray-core/transport/internet/reality"
@@ -43,6 +46,7 @@ type Handler struct {
 	serverPicker  protocol.ServerPicker
 	policyManager policy.Manager
 	cone          bool
+	encryption    *encryption.ClientInstance
 }
 
 // New creates a new VLess outbound handler.
@@ -62,6 +66,20 @@ func New(ctx context.Context, config *Config) (*Handler, error) {
 		serverPicker:  protocol.NewRoundRobinServerPicker(serverList),
 		policyManager: v.GetFeature(policy.ManagerType()).(policy.Manager),
 		cone:          ctx.Value("cone").(bool),
+	}
+
+	a := handler.serverPicker.PickServer().PickUser().Account.(*vless.MemoryAccount)
+	if a.Encryption != "" && a.Encryption != "none" {
+		s := strings.Split(a.Encryption, ".")
+		var nfsPKeysBytes [][]byte
+		for _, r := range s {
+			b, _ := base64.RawURLEncoding.DecodeString(r)
+			nfsPKeysBytes = append(nfsPKeysBytes, b)
+		}
+		handler.encryption = &encryption.ClientInstance{}
+		if err := handler.encryption.Init(nfsPKeysBytes, a.XorMode, a.Seconds, a.Padding); err != nil {
+			return nil, errors.New("failed to use encryption").Base(err).AtError()
+		}
 	}
 
 	return handler, nil
@@ -97,6 +115,13 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	}
 	target := ob.Target
 	errors.LogInfo(ctx, "tunneling request to ", target, " via ", rec.Destination().NetAddr())
+
+	if h.encryption != nil {
+		var err error
+		if conn, err = h.encryption.Handshake(conn); err != nil {
+			return errors.New("ML-KEM-768 handshake failed").Base(err).AtInfo()
+		}
+	}
 
 	command := protocol.RequestCommandTCP
 	if target.Network == net.Network_UDP {
@@ -140,7 +165,13 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		case protocol.RequestCommandTCP:
 			var t reflect.Type
 			var p uintptr
-			if tlsConn, ok := iConn.(*tls.Conn); ok {
+			if commonConn, ok := conn.(*encryption.CommonConn); ok {
+				if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
+					ob.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
+				}
+				t = reflect.TypeOf(commonConn).Elem()
+				p = uintptr(unsafe.Pointer(commonConn))
+			} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 				t = reflect.TypeOf(tlsConn.Conn).Elem()
 				p = uintptr(unsafe.Pointer(tlsConn.Conn))
 			} else if utlsConn, ok := iConn.(*tls.UConn); ok {
@@ -194,7 +225,7 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		}
 
 		// default: serverWriter := bufferWriter
-		serverWriter := encoding.EncodeBodyAddons(bufferWriter, request, requestAddons, trafficState, true, ctx)
+		serverWriter := encoding.EncodeBodyAddons(bufferWriter, request, requestAddons, trafficState, true, ctx, conn, ob)
 		if request.Command == protocol.RequestCommandMux && request.Port == 666 {
 			serverWriter = xudp.NewPacketWriter(serverWriter, target, xudp.GetGlobalID(ctx))
 		}
@@ -222,7 +253,6 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 			return errors.New("failed to write A request payload").Base(err).AtWarning()
 		}
 
-		var err error
 		if requestAddons.Flow == vless.XRV {
 			if tlsConn, ok := iConn.(*tls.Conn); ok {
 				if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
@@ -233,12 +263,8 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 					return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, utlsConn.ConnectionState().Version).AtWarning()
 				}
 			}
-			ctx1 := session.ContextWithInbound(ctx, nil) // TODO enable splice
-			err = encoding.XtlsWrite(clientReader, serverWriter, timer, conn, trafficState, ob, true, ctx1)
-		} else {
-			// from clientReader.ReadMultiBuffer to serverWriter.WriteMultiBuffer
-			err = buf.Copy(clientReader, serverWriter, buf.UpdateActivity(timer))
 		}
+		err := buf.Copy(clientReader, serverWriter, buf.UpdateActivity(timer))
 		if err != nil {
 			return errors.New("failed to transfer request payload").Base(err).AtInfo()
 		}
@@ -261,7 +287,7 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		// default: serverReader := buf.NewReader(conn)
 		serverReader := encoding.DecodeBodyAddons(conn, request, responseAddons)
 		if requestAddons.Flow == vless.XRV {
-			serverReader = proxy.NewVisionReader(serverReader, trafficState, false, ctx)
+			serverReader = proxy.NewVisionReader(serverReader, trafficState, false, ctx, conn, input, rawInput, ob)
 		}
 		if request.Command == protocol.RequestCommandMux && request.Port == 666 {
 			if requestAddons.Flow == vless.XRV {
@@ -272,7 +298,7 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		}
 
 		if requestAddons.Flow == vless.XRV {
-			err = encoding.XtlsRead(serverReader, clientWriter, timer, conn, input, rawInput, trafficState, ob, false, ctx)
+			err = encoding.XtlsRead(serverReader, clientWriter, timer, conn, trafficState, false, ctx)
 		} else {
 			// from serverReader.ReadMultiBuffer to clientWriter.WriteMultiBuffer
 			err = buf.Copy(serverReader, clientWriter, buf.UpdateActivity(timer))

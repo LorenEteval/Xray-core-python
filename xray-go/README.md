@@ -11,8 +11,10 @@
 [<img alt="Project X NFT" width="150px" src="https://raw2.seadn.io/ethereum/0x5ee362866001613093361eb8569d59c4141b76d1/7fa9ce900fb39b44226348db330e32/8b7fa9ce900fb39b44226348db330e32.svg" />](https://opensea.io/item/ethereum/0x5ee362866001613093361eb8569d59c4141b76d1/1)
 
 - **ETH/USDT/USDC: `0xDc3Fe44F0f25D13CACb1C4896CD0D321df3146Ee`**
+- **Project X NFT: https://opensea.io/item/ethereum/0x5ee362866001613093361eb8569d59c4141b76d1/1**
+- **VLESS NFT: https://opensea.io/collection/vless**
 - **REALITY NFT: https://opensea.io/item/ethereum/0x5ee362866001613093361eb8569d59c4141b76d1/2**
-- **Related links: https://opensea.io/collection/xtls, [Announcement of NFTs by Project X](https://github.com/XTLS/Xray-core/discussions/3633), [XHTTP: Beyond REALITY](https://github.com/XTLS/Xray-core/discussions/4113)**
+- **Related links: [VLESS Post-Quantum Encryption](https://github.com/XTLS/Xray-core/pull/5067), [XHTTP: Beyond REALITY](https://github.com/XTLS/Xray-core/discussions/4113), [Announcement of NFTs by Project X](https://github.com/XTLS/Xray-core/discussions/3633)**
 
 ## License
 
@@ -165,7 +167,13 @@ CGO_ENABLED=0 go build -o xray -trimpath -buildvcs=false -ldflags="-s -w -buildi
 Make sure that you are using the same Go version, and remember to set the git commit id (7 bytes):
 
 ```bash
-CGO_ENABLED=0 go build -o xray -trimpath -buildvcs=false -ldflags="-X github.com/xtls/xray-core/core.build=REPLACE -s -w -buildid=" -v ./main
+CGO_ENABLED=0 go build -o xray -trimpath -buildvcs=false -gcflags="all=-l=4" -ldflags="-X github.com/xtls/xray-core/core.build=REPLACE -s -w -buildid=" -v ./main
+```
+
+If you are compiling a 32-bit MIPS/MIPSLE target, use this command instead:
+
+```bash
+CGO_ENABLED=0 go build -o xray -trimpath -buildvcs=false -gcflags="-l=4" -ldflags="-X github.com/xtls/xray-core/core.build=REPLACE -s -w -buildid=" -v ./main
 ```
 
 ## Stargazers over time

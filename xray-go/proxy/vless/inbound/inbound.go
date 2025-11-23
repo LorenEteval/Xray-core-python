@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	gotls "crypto/tls"
+	"encoding/base64"
 	"io"
 	"reflect"
 	"strconv"
@@ -29,6 +30,8 @@ import (
 	"github.com/xtls/xray-core/proxy"
 	"github.com/xtls/xray-core/proxy/vless"
 	"github.com/xtls/xray-core/proxy/vless/encoding"
+	"github.com/xtls/xray-core/proxy/vless/encryption"
+	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/internet/reality"
 	"github.com/xtls/xray-core/transport/internet/stat"
 	"github.com/xtls/xray-core/transport/internet/tls"
@@ -67,6 +70,7 @@ type Handler struct {
 	policyManager         policy.Manager
 	validator             vless.Validator
 	dns                   dns.Client
+	decryption            *encryption.ServerInstance
 	fallbacks             map[string]map[string]map[string]*Fallback // or nil
 	// regexps               map[string]*regexp.Regexp       // or nil
 }
@@ -79,6 +83,19 @@ func New(ctx context.Context, config *Config, dc dns.Client, validator vless.Val
 		policyManager:         v.GetFeature(policy.ManagerType()).(policy.Manager),
 		dns:                   dc,
 		validator:             validator,
+	}
+
+	if config.Decryption != "" && config.Decryption != "none" {
+		s := strings.Split(config.Decryption, ".")
+		var nfsSKeysBytes [][]byte
+		for _, r := range s {
+			b, _ := base64.RawURLEncoding.DecodeString(r)
+			nfsSKeysBytes = append(nfsSKeysBytes, b)
+		}
+		handler.decryption = &encryption.ServerInstance{}
+		if err := handler.decryption.Init(nfsSKeysBytes, config.XorMode, config.SecondsFrom, config.SecondsTo, config.Padding); err != nil {
+			return nil, errors.New("failed to use decryption").Base(err).AtError()
+		}
 	}
 
 	if config.Fallbacks != nil {
@@ -159,6 +176,9 @@ func isMuxAndNotXUDP(request *protocol.RequestHeader, first *buf.Buffer) bool {
 
 // Close implements common.Closable.Close().
 func (h *Handler) Close() error {
+	if h.decryption != nil {
+		h.decryption.Close()
+	}
 	return errors.Combine(common.Close(h.validator))
 }
 
@@ -199,6 +219,13 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		iConn = statConn.Connection
 	}
 
+	if h.decryption != nil {
+		var err error
+		if connection, err = h.decryption.Handshake(connection, nil); err != nil {
+			return errors.New("ML-KEM-768 handshake failed").Base(err).AtInfo()
+		}
+	}
+
 	sessionPolicy := h.policyManager.ForLevel(0)
 	if err := connection.SetReadDeadline(time.Now().Add(sessionPolicy.Timeouts.Handshake)); err != nil {
 		return errors.New("unable to set read deadline").Base(err).AtWarning()
@@ -217,6 +244,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		Buffer: buf.MultiBuffer{first},
 	}
 
+	var userSentID []byte // not MemoryAccount.ID
 	var request *protocol.RequestHeader
 	var requestAddons *encoding.Addons
 	var err error
@@ -227,7 +255,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 	if isfb && firstLen < 18 {
 		err = errors.New("fallback directly")
 	} else {
-		request, requestAddons, isfb, err = encoding.DecodeRequestHeader(isfb, first, reader, h.validator)
+		userSentID, request, requestAddons, isfb, err = encoding.DecodeRequestHeader(isfb, first, reader, h.validator)
 	}
 
 	if err != nil {
@@ -455,6 +483,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 	}
 	inbound.Name = "vless"
 	inbound.User = request.User
+	inbound.VlessRoute = net.PortFromBytes(userSentID[6:8])
 
 	account := request.User.Account.(*vless.MemoryAccount)
 
@@ -476,7 +505,13 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 			case protocol.RequestCommandTCP:
 				var t reflect.Type
 				var p uintptr
-				if tlsConn, ok := iConn.(*tls.Conn); ok {
+				if commonConn, ok := connection.(*encryption.CommonConn); ok {
+					if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
+						inbound.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
+					}
+					t = reflect.TypeOf(commonConn).Elem()
+					p = uintptr(unsafe.Pointer(commonConn))
+				} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 					if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
 						return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, tlsConn.ConnectionState().Version).AtWarning()
 					}
@@ -517,89 +552,24 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		ctx = session.ContextWithAllowedNetwork(ctx, net.Network_UDP)
 	}
 
-	sessionPolicy = h.policyManager.ForLevel(request.User.Level)
-	ctx, cancel := context.WithCancel(ctx)
-	timer := signal.CancelAfterInactivity(ctx, cancel, sessionPolicy.Timeouts.ConnectionIdle)
-	inbound.Timer = timer
-	ctx = policy.ContextWithBufferPolicy(ctx, sessionPolicy.Buffer)
-
-	link, err := dispatcher.Dispatch(ctx, request.Destination())
-	if err != nil {
-		return errors.New("failed to dispatch request to ", request.Destination()).Base(err).AtWarning()
+	trafficState := proxy.NewTrafficState(userSentID)
+	clientReader := encoding.DecodeBodyAddons(reader, request, requestAddons)
+	if requestAddons.Flow == vless.XRV {
+		clientReader = proxy.NewVisionReader(clientReader, trafficState, true, ctx, connection, input, rawInput, nil)
 	}
 
-	serverReader := link.Reader // .(*pipe.Reader)
-	serverWriter := link.Writer // .(*pipe.Writer)
-	trafficState := proxy.NewTrafficState(account.ID.Bytes())
-	postRequest := func() error {
-		defer timer.SetTimeout(sessionPolicy.Timeouts.DownlinkOnly)
-
-		// default: clientReader := reader
-		clientReader := encoding.DecodeBodyAddons(reader, request, requestAddons)
-
-		var err error
-
-		if requestAddons.Flow == vless.XRV {
-			ctx1 := session.ContextWithInbound(ctx, nil) // TODO enable splice
-			clientReader = proxy.NewVisionReader(clientReader, trafficState, true, ctx1)
-			err = encoding.XtlsRead(clientReader, serverWriter, timer, connection, input, rawInput, trafficState, nil, true, ctx1)
-		} else {
-			// from clientReader.ReadMultiBuffer to serverWriter.WriteMultiBuffer
-			err = buf.Copy(clientReader, serverWriter, buf.UpdateActivity(timer))
-		}
-
-		if err != nil {
-			return errors.New("failed to transfer request payload").Base(err).AtInfo()
-		}
-
-		return nil
+	bufferWriter := buf.NewBufferedWriter(buf.NewWriter(connection))
+	if err := encoding.EncodeResponseHeader(bufferWriter, request, responseAddons); err != nil {
+		return errors.New("failed to encode response header").Base(err).AtWarning()
 	}
+	clientWriter := encoding.EncodeBodyAddons(bufferWriter, request, requestAddons, trafficState, false, ctx, connection, nil)
+	bufferWriter.SetFlushNext()
 
-	getResponse := func() error {
-		defer timer.SetTimeout(sessionPolicy.Timeouts.UplinkOnly)
-
-		bufferWriter := buf.NewBufferedWriter(buf.NewWriter(connection))
-		if err := encoding.EncodeResponseHeader(bufferWriter, request, responseAddons); err != nil {
-			return errors.New("failed to encode response header").Base(err).AtWarning()
-		}
-
-		// default: clientWriter := bufferWriter
-		clientWriter := encoding.EncodeBodyAddons(bufferWriter, request, requestAddons, trafficState, false, ctx)
-		multiBuffer, err1 := serverReader.ReadMultiBuffer()
-		if err1 != nil {
-			return err1 // ...
-		}
-		if err := clientWriter.WriteMultiBuffer(multiBuffer); err != nil {
-			return err // ...
-		}
-		// Flush; bufferWriter.WriteMultiBuffer now is bufferWriter.writer.WriteMultiBuffer
-		if err := bufferWriter.SetBuffered(false); err != nil {
-			return errors.New("failed to write A response payload").Base(err).AtWarning()
-		}
-
-		var err error
-		if requestAddons.Flow == vless.XRV {
-			err = encoding.XtlsWrite(serverReader, clientWriter, timer, connection, trafficState, nil, false, ctx)
-		} else {
-			// from serverReader.ReadMultiBuffer to clientWriter.WriteMultiBuffer
-			err = buf.Copy(serverReader, clientWriter, buf.UpdateActivity(timer))
-		}
-		if err != nil {
-			return errors.New("failed to transfer response payload").Base(err).AtInfo()
-		}
-		// Indicates the end of response payload.
-		switch responseAddons.Flow {
-		default:
-		}
-
-		return nil
+	if err := dispatcher.DispatchLink(ctx, request.Destination(), &transport.Link{
+		Reader: clientReader,
+		Writer: clientWriter},
+	); err != nil {
+		return errors.New("failed to dispatch request").Base(err)
 	}
-
-	if err := task.Run(ctx, task.OnSuccess(postRequest, task.Close(serverWriter)), getResponse); err != nil {
-		common.Interrupt(serverReader)
-		common.Interrupt(serverWriter)
-		return errors.New("connection ends").Base(err).AtInfo()
-	}
-
 	return nil
 }

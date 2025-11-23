@@ -91,6 +91,7 @@ func (w *tcpWorker) callback(conn stat.Connection) {
 	}
 	ctx = session.ContextWithInbound(ctx, &session.Inbound{
 		Source:  net.DestinationFromAddr(conn.RemoteAddr()),
+		Local:   net.DestinationFromAddr(conn.LocalAddr()),
 		Gateway: net.TCPDestination(w.address, w.port),
 		Tag:     w.tag,
 		Conn:    conn,
@@ -321,8 +322,18 @@ func (w *udpWorker) callback(b *buf.Buffer, source net.Destination, originalDest
 				outbounds[0].Target = originalDest
 			}
 			ctx = session.ContextWithOutbounds(ctx, outbounds)
+			local := net.DestinationFromAddr(w.hub.Addr())
+			if local.Address == net.AnyIP || local.Address == net.AnyIPv6 {
+				if source.Address.Family().IsIPv4() {
+					local.Address = net.AnyIP
+				} else if source.Address.Family().IsIPv6() {
+					local.Address = net.AnyIPv6
+				}
+			}
+
 			ctx = session.ContextWithInbound(ctx, &session.Inbound{
 				Source:  source,
+				Local:   local, // Due to some limitations, in UDP connections, localIP is always equal to listen interface IP
 				Gateway: net.UDPDestination(w.address, w.port),
 				Tag:     w.tag,
 			})
@@ -472,6 +483,7 @@ func (w *dsWorker) callback(conn stat.Connection) {
 	}
 	ctx = session.ContextWithInbound(ctx, &session.Inbound{
 		Source:  net.DestinationFromAddr(conn.RemoteAddr()),
+		Local:   net.DestinationFromAddr(conn.LocalAddr()),
 		Gateway: net.UnixDestination(w.address),
 		Tag:     w.tag,
 		Conn:    conn,

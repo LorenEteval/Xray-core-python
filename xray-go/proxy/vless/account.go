@@ -18,6 +18,9 @@ func (a *Account) AsAccount() (protocol.Account, error) {
 		ID:         protocol.NewID(id),
 		Flow:       a.Flow,       // needs parser here?
 		Encryption: a.Encryption, // needs parser here?
+		XorMode:    a.XorMode,
+		Seconds:    a.Seconds,
+		Padding:    a.Padding,
 	}, nil
 }
 
@@ -27,8 +30,11 @@ type MemoryAccount struct {
 	ID *protocol.ID
 	// Flow of the account. May be "xtls-rprx-vision".
 	Flow string
-	// Encryption of the account. Used for client connections, and only accepts "none" for now.
+
 	Encryption string
+	XorMode    uint32
+	Seconds    uint32
+	Padding    string
 }
 
 // Equals implements protocol.Account.Equals().
@@ -45,5 +51,8 @@ func (a *MemoryAccount) ToProto() proto.Message {
 		Id:         a.ID.String(),
 		Flow:       a.Flow,
 		Encryption: a.Encryption,
+		XorMode:    a.XorMode,
+		Seconds:    a.Seconds,
+		Padding:    a.Padding,
 	}
 }
