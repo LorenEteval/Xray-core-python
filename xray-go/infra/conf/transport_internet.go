@@ -412,6 +412,8 @@ type TLSConfig struct {
 	MasterKeyLog                         string           `json:"masterKeyLog"`
 	ServerNameToVerify                   string           `json:"serverNameToVerify"`
 	VerifyPeerCertInNames                []string         `json:"verifyPeerCertInNames"`
+	ECHConfigList                        string           `json:"echConfigList"`
+	ECHServerKeys                        string           `json:"echServerKeys"`
 }
 
 // Build implements Buildable.
@@ -483,6 +485,16 @@ func (c *TLSConfig) Build() (proto.Message, error) {
 	}
 	config.VerifyPeerCertInNames = c.VerifyPeerCertInNames
 
+	config.EchConfigList = c.ECHConfigList
+
+	if c.ECHServerKeys != "" {
+		EchPrivateKey, err := base64.StdEncoding.DecodeString(c.ECHServerKeys)
+		if err != nil {
+			return nil, errors.New("invalid ECH Config", c.ECHServerKeys)
+		}
+		config.EchServerKeys = EchPrivateKey
+	}
+
 	return config, nil
 }
 
@@ -505,16 +517,18 @@ type REALITYConfig struct {
 	MaxClientVer string          `json:"maxClientVer"`
 	MaxTimeDiff  uint64          `json:"maxTimeDiff"`
 	ShortIds     []string        `json:"shortIds"`
+	Mldsa65Seed  string          `json:"mldsa65Seed"`
 
 	LimitFallbackUpload   LimitFallback `json:"limitFallbackUpload"`
 	LimitFallbackDownload LimitFallback `json:"limitFallbackDownload"`
 
-	Fingerprint string `json:"fingerprint"`
-	ServerName  string `json:"serverName"`
-	Password    string `json:"password"`
-	PublicKey   string `json:"publicKey"`
-	ShortId     string `json:"shortId"`
-	SpiderX     string `json:"spiderX"`
+	Fingerprint   string `json:"fingerprint"`
+	ServerName    string `json:"serverName"`
+	Password      string `json:"password"`
+	PublicKey     string `json:"publicKey"`
+	ShortId       string `json:"shortId"`
+	Mldsa65Verify string `json:"mldsa65Verify"`
+	SpiderX       string `json:"spiderX"`
 }
 
 func (c *REALITYConfig) Build() (proto.Message, error) {
@@ -544,7 +558,7 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 				}
 			default:
 				if _, err = strconv.Atoi(s); err == nil {
-					s = "127.0.0.1:" + s
+					s = "localhost:" + s
 				}
 				if _, _, err = net.SplitHostPort(s); err == nil {
 					c.Type = "tcp"
@@ -610,6 +624,15 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 		config.ServerNames = c.ServerNames
 		config.MaxTimeDiff = c.MaxTimeDiff
 
+		if c.Mldsa65Seed != "" {
+			if c.Mldsa65Seed == c.PrivateKey {
+				return nil, errors.New(`"mldsa65Seed" and "privateKey" can not be the same value: `, c.Mldsa65Seed)
+			}
+			if config.Mldsa65Seed, err = base64.RawURLEncoding.DecodeString(c.Mldsa65Seed); err != nil || len(config.Mldsa65Seed) != 32 {
+				return nil, errors.New(`invalid "mldsa65Seed": `, c.Mldsa65Seed)
+			}
+		}
+
 		config.LimitFallbackUpload = new(reality.LimitFallback)
 		config.LimitFallbackUpload.AfterBytes = c.LimitFallbackUpload.AfterBytes
 		config.LimitFallbackUpload.BytesPerSec = c.LimitFallbackUpload.BytesPerSec
@@ -644,6 +667,11 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 		config.ShortId = make([]byte, 8)
 		if _, err = hex.Decode(config.ShortId, []byte(c.ShortId)); err != nil {
 			return nil, errors.New(`invalid "shortId": `, c.ShortId)
+		}
+		if c.Mldsa65Verify != "" {
+			if config.Mldsa65Verify, err = base64.RawURLEncoding.DecodeString(c.Mldsa65Verify); err != nil || len(config.Mldsa65Verify) != 1952 {
+				return nil, errors.New(`invalid "mldsa65Verify": `, c.Mldsa65Verify)
+			}
 		}
 		if c.SpiderX == "" {
 			c.SpiderX = "/"
