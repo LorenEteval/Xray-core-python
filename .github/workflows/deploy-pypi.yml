@@ -9,7 +9,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [ ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, macos-15-intel, macos-14, macos-15 ]
+        os: [ ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, windows-11-arm, macos-15-intel, macos-14, macos-15 ]
         python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14" ]
     steps:
       - uses: actions/checkout@v3
