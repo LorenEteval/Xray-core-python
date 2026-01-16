@@ -80,21 +80,6 @@ func (c *NameServerConfig) UnmarshalJSON(data []byte) error {
 	return errors.New("failed to parse name server: ", string(data))
 }
 
-func toDomainMatchingType(t router.Domain_Type) dns.DomainMatchingType {
-	switch t {
-	case router.Domain_Domain:
-		return dns.DomainMatchingType_Subdomain
-	case router.Domain_Full:
-		return dns.DomainMatchingType_Full
-	case router.Domain_Plain:
-		return dns.DomainMatchingType_Keyword
-	case router.Domain_Regex:
-		return dns.DomainMatchingType_Regex
-	default:
-		panic("unknown domain type")
-	}
-}
-
 func (c *NameServerConfig) Build() (*dns.NameServer, error) {
 	if c.Address == nil {
 		return nil, errors.New("NameServer address is not specified.")
@@ -104,14 +89,14 @@ func (c *NameServerConfig) Build() (*dns.NameServer, error) {
 	var originalRules []*dns.NameServer_OriginalRule
 
 	for _, rule := range c.Domains {
-		parsedDomain, err := parseDomainRule(rule)
+		parsedDomain, err := ParseDomainRule(rule)
 		if err != nil {
 			return nil, errors.New("invalid domain rule: ", rule).Base(err)
 		}
 
 		for _, pd := range parsedDomain {
 			domains = append(domains, &dns.NameServer_PriorityDomain{
-				Type:   toDomainMatchingType(pd.Type),
+				Type:   dns.ToDomainMatchingType(pd.Type),
 				Domain: pd.Value,
 			})
 		}

@@ -97,7 +97,7 @@ func NewClient(
 	tag string,
 	ipOption dns.IPOption,
 	matcherInfos *[]*DomainMatcherInfo,
-	updateDomainRule func(strmatcher.Matcher, int, []*DomainMatcherInfo) error,
+	updateDomainRule func(strmatcher.Matcher, int, []*DomainMatcherInfo),
 ) (*Client, error) {
 	client := &Client{}
 
@@ -134,7 +134,8 @@ func NewClient(
 		for _, domain := range ns.PrioritizedDomain {
 			domainRule, err := toStrMatcher(domain.Type, domain.Domain)
 			if err != nil {
-				return errors.New("failed to create prioritized domain").Base(err).AtWarning()
+				errors.LogErrorInner(ctx, err, "failed to create domain matcher, ignore domain rule [type: ", domain.Type, ", domain: ", domain.Domain, "]")
+				domainRule, _ = toStrMatcher(DomainMatchingType_Full, "hack.fix.index.for.illegal.domain.rule")
 			}
 			originalRuleIdx := ruleCurr
 			if ruleCurr < len(ns.OriginalRules) {
@@ -151,10 +152,7 @@ func NewClient(
 				rules = append(rules, domainRule.String())
 				ruleCurr++
 			}
-			err = updateDomainRule(domainRule, originalRuleIdx, *matcherInfos)
-			if err != nil {
-				return errors.New("failed to create prioritized domain").Base(err).AtWarning()
-			}
+			updateDomainRule(domainRule, originalRuleIdx, *matcherInfos)
 		}
 
 		// Establish expected IPs
@@ -297,5 +295,20 @@ func ResolveIpOptionOverride(queryStrategy QueryStrategy, ipOption dns.IPOption)
 		}
 	default:
 		return ipOption
+	}
+}
+
+func ToDomainMatchingType(t router.Domain_Type) DomainMatchingType {
+	switch t {
+	case router.Domain_Domain:
+		return DomainMatchingType_Subdomain
+	case router.Domain_Full:
+		return DomainMatchingType_Full
+	case router.Domain_Plain:
+		return DomainMatchingType_Keyword
+	case router.Domain_Regex:
+		return DomainMatchingType_Regex
+	default:
+		panic("unknown domain type")
 	}
 }

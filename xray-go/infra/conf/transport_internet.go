@@ -16,7 +16,9 @@ import (
 	"github.com/xtls/xray-core/common/platform/filesystem"
 	"github.com/xtls/xray-core/common/serial"
 	"github.com/xtls/xray-core/transport/internet"
+	"github.com/xtls/xray-core/transport/internet/finalmask/salamander"
 	"github.com/xtls/xray-core/transport/internet/httpupgrade"
+	"github.com/xtls/xray-core/transport/internet/hysteria"
 	"github.com/xtls/xray-core/transport/internet/kcp"
 	"github.com/xtls/xray-core/transport/internet/reality"
 	"github.com/xtls/xray-core/transport/internet/splithttp"
@@ -332,6 +334,161 @@ func (c *SplitHTTPConfig) Build() (proto.Message, error) {
 	return config, nil
 }
 
+const (
+	Byte     = 1
+	Kilobyte = 1024 * Byte
+	Megabyte = 1024 * Kilobyte
+	Gigabyte = 1024 * Megabyte
+	Terabyte = 1024 * Gigabyte
+)
+
+type Bandwidth string
+
+func (b Bandwidth) Bps() (uint64, error) {
+	s := strings.TrimSpace(strings.ToLower(string(b)))
+	if s == "" {
+		return 0, nil
+	}
+
+	idx := len(s)
+	for i, c := range s {
+		if (c < '0' || c > '9') && c != '.' {
+			idx = i
+			break
+		}
+	}
+
+	numStr := s[:idx]
+	unit := strings.TrimSpace(s[idx:])
+
+	val, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	mul := uint64(1)
+	switch unit {
+	case "", "b", "bps":
+		mul = Byte
+	case "k", "kb", "kbps":
+		mul = Kilobyte
+	case "m", "mb", "mbps":
+		mul = Megabyte
+	case "g", "gb", "gbps":
+		mul = Gigabyte
+	case "t", "tb", "tbps":
+		mul = Terabyte
+	default:
+		return 0, errors.New("unsupported unit: " + unit)
+	}
+
+	return uint64(val*float64(mul)) / 8, nil
+}
+
+type UdpHop struct {
+	PortList json.RawMessage `json:"port"`
+	Interval int64           `json:"interval"`
+}
+
+type HysteriaConfig struct {
+	Version int32     `json:"version"`
+	Auth    string    `json:"auth"`
+	Up      Bandwidth `json:"up"`
+	Down    Bandwidth `json:"down"`
+	UdpHop  UdpHop    `json:"udphop"`
+
+	InitStreamReceiveWindow     uint64 `json:"initStreamReceiveWindow"`
+	MaxStreamReceiveWindow      uint64 `json:"maxStreamReceiveWindow"`
+	InitConnectionReceiveWindow uint64 `json:"initConnectionReceiveWindow"`
+	MaxConnectionReceiveWindow  uint64 `json:"maxConnectionReceiveWindow"`
+	MaxIdleTimeout              int64  `json:"maxIdleTimeout"`
+	KeepAlivePeriod             int64  `json:"keepAlivePeriod"`
+	DisablePathMTUDiscovery     bool   `json:"disablePathMTUDiscovery"`
+}
+
+func (c *HysteriaConfig) Build() (proto.Message, error) {
+	if c.Version != 2 {
+		return nil, errors.New("version != 2")
+	}
+	up, err := c.Up.Bps()
+	if err != nil {
+		return nil, err
+	}
+	down, err := c.Down.Bps()
+	if err != nil {
+		return nil, err
+	}
+	var hop *PortList
+	if err := json.Unmarshal(c.UdpHop.PortList, &hop); err != nil {
+		hop = &PortList{}
+	}
+
+	if up > 0 && up < 65536 {
+		return nil, errors.New("Up must be at least 65536 Bps")
+	}
+	if down > 0 && down < 65536 {
+		return nil, errors.New("Down must be at least 65536 Bps")
+	}
+	if c.UdpHop.Interval != 0 && c.UdpHop.Interval < 5 {
+		return nil, errors.New("Interval must be at least 5")
+	}
+
+	if c.InitStreamReceiveWindow > 0 && c.InitStreamReceiveWindow < 16384 {
+		return nil, errors.New("InitStreamReceiveWindow must be at least 16384")
+	}
+	if c.MaxStreamReceiveWindow > 0 && c.MaxStreamReceiveWindow < 16384 {
+		return nil, errors.New("MaxStreamReceiveWindow must be at least 16384")
+	}
+	if c.InitConnectionReceiveWindow > 0 && c.InitConnectionReceiveWindow < 16384 {
+		return nil, errors.New("InitConnectionReceiveWindow must be at least 16384")
+	}
+	if c.MaxConnectionReceiveWindow > 0 && c.MaxConnectionReceiveWindow < 16384 {
+		return nil, errors.New("MaxConnectionReceiveWindow must be at least 16384")
+	}
+	if c.MaxIdleTimeout != 0 && (c.MaxIdleTimeout < 4 || c.MaxIdleTimeout > 120) {
+		return nil, errors.New("MaxIdleTimeout must be between 4 and 120")
+	}
+	if c.KeepAlivePeriod != 0 && (c.KeepAlivePeriod < 2 || c.KeepAlivePeriod > 60) {
+		return nil, errors.New("KeepAlivePeriod must be between 2 and 60")
+	}
+
+	config := &hysteria.Config{}
+	config.Version = int32(c.Version)
+	config.Auth = c.Auth
+	config.Up = up
+	config.Down = down
+	config.Ports = hop.Build().Ports()
+	config.Interval = c.UdpHop.Interval
+	config.InitStreamReceiveWindow = c.InitStreamReceiveWindow
+	config.MaxStreamReceiveWindow = c.MaxStreamReceiveWindow
+	config.InitConnReceiveWindow = c.InitConnectionReceiveWindow
+	config.MaxConnReceiveWindow = c.MaxConnectionReceiveWindow
+	config.MaxIdleTimeout = c.MaxIdleTimeout
+	config.KeepAlivePeriod = c.KeepAlivePeriod
+	config.DisablePathMtuDiscovery = c.DisablePathMTUDiscovery
+
+	if config.InitStreamReceiveWindow == 0 {
+		config.InitStreamReceiveWindow = 8388608
+	}
+	if config.MaxStreamReceiveWindow == 0 {
+		config.MaxStreamReceiveWindow = 8388608
+	}
+	if config.InitConnReceiveWindow == 0 {
+		config.InitConnReceiveWindow = 8388608 * 5 / 2
+	}
+	if config.MaxConnReceiveWindow == 0 {
+		config.MaxConnReceiveWindow = 8388608 * 5 / 2
+	}
+	if config.MaxIdleTimeout == 0 {
+		config.MaxIdleTimeout = 30
+	}
+	// if config.KeepAlivePeriod == 0 {
+	// 	config.KeepAlivePeriod = 10
+	// }
+
+	return config, nil
+}
+
 func readFileOrString(f string, s []string) ([]byte, error) {
 	if len(f) > 0 {
 		return filesystem.ReadCert(f)
@@ -395,27 +552,26 @@ func (c *TLSCertConfig) Build() (*tls.Certificate, error) {
 }
 
 type TLSConfig struct {
-	Insecure                             bool             `json:"allowInsecure"`
-	Certs                                []*TLSCertConfig `json:"certificates"`
-	ServerName                           string           `json:"serverName"`
-	ALPN                                 *StringList      `json:"alpn"`
-	EnableSessionResumption              bool             `json:"enableSessionResumption"`
-	DisableSystemRoot                    bool             `json:"disableSystemRoot"`
-	MinVersion                           string           `json:"minVersion"`
-	MaxVersion                           string           `json:"maxVersion"`
-	CipherSuites                         string           `json:"cipherSuites"`
-	Fingerprint                          string           `json:"fingerprint"`
-	RejectUnknownSNI                     bool             `json:"rejectUnknownSni"`
-	PinnedPeerCertificateChainSha256     *[]string        `json:"pinnedPeerCertificateChainSha256"`
-	PinnedPeerCertificatePublicKeySha256 *[]string        `json:"pinnedPeerCertificatePublicKeySha256"`
-	CurvePreferences                     *StringList      `json:"curvePreferences"`
-	MasterKeyLog                         string           `json:"masterKeyLog"`
-	ServerNameToVerify                   string           `json:"serverNameToVerify"`
-	VerifyPeerCertInNames                []string         `json:"verifyPeerCertInNames"`
-	ECHServerKeys                        string           `json:"echServerKeys"`
-	ECHConfigList                        string           `json:"echConfigList"`
-	ECHForceQuery                        string           `json:"echForceQuery"`
-	ECHSocketSettings                    *SocketConfig    `json:"echSockopt"`
+	Insecure                bool             `json:"allowInsecure"`
+	Certs                   []*TLSCertConfig `json:"certificates"`
+	ServerName              string           `json:"serverName"`
+	ALPN                    *StringList      `json:"alpn"`
+	EnableSessionResumption bool             `json:"enableSessionResumption"`
+	DisableSystemRoot       bool             `json:"disableSystemRoot"`
+	MinVersion              string           `json:"minVersion"`
+	MaxVersion              string           `json:"maxVersion"`
+	CipherSuites            string           `json:"cipherSuites"`
+	Fingerprint             string           `json:"fingerprint"`
+	RejectUnknownSNI        bool             `json:"rejectUnknownSni"`
+	PinnedPeerCertSha256    string           `json:"pinnedPeerCertSha256"`
+	CurvePreferences        *StringList      `json:"curvePreferences"`
+	MasterKeyLog            string           `json:"masterKeyLog"`
+	ServerNameToVerify      string           `json:"serverNameToVerify"`
+	VerifyPeerCertInNames   []string         `json:"verifyPeerCertInNames"`
+	ECHServerKeys           string           `json:"echServerKeys"`
+	ECHConfigList           string           `json:"echConfigList"`
+	ECHForceQuery           string           `json:"echForceQuery"`
+	ECHSocketSettings       *SocketConfig    `json:"echSockopt"`
 }
 
 // Build implements Buildable.
@@ -458,25 +614,20 @@ func (c *TLSConfig) Build() (proto.Message, error) {
 	}
 	config.RejectUnknownSni = c.RejectUnknownSNI
 
-	if c.PinnedPeerCertificateChainSha256 != nil {
-		config.PinnedPeerCertificateChainSha256 = [][]byte{}
-		for _, v := range *c.PinnedPeerCertificateChainSha256 {
-			hashValue, err := base64.StdEncoding.DecodeString(v)
+	if c.PinnedPeerCertSha256 != "" {
+		config.PinnedPeerCertSha256 = [][]byte{}
+		// Split by tilde separator
+		hashes := strings.Split(c.PinnedPeerCertSha256, "~")
+		for _, v := range hashes {
+			v = strings.TrimSpace(v)
+			if v == "" {
+				continue
+			}
+			hashValue, err := hex.DecodeString(v)
 			if err != nil {
 				return nil, err
 			}
-			config.PinnedPeerCertificateChainSha256 = append(config.PinnedPeerCertificateChainSha256, hashValue)
-		}
-	}
-
-	if c.PinnedPeerCertificatePublicKeySha256 != nil {
-		config.PinnedPeerCertificatePublicKeySha256 = [][]byte{}
-		for _, v := range *c.PinnedPeerCertificatePublicKeySha256 {
-			hashValue, err := base64.StdEncoding.DecodeString(v)
-			if err != nil {
-				return nil, err
-			}
-			config.PinnedPeerCertificatePublicKeySha256 = append(config.PinnedPeerCertificatePublicKeySha256, hashValue)
+			config.PinnedPeerCertSha256 = append(config.PinnedPeerCertSha256, hashValue)
 		}
 	}
 
@@ -752,6 +903,8 @@ func (p TransportProtocol) Build() (string, error) {
 		return "", errors.PrintRemovedFeatureError("HTTP transport (without header padding, etc.)", "XHTTP stream-one H2 & H3")
 	case "quic":
 		return "", errors.PrintRemovedFeatureError("QUIC transport (without web service, etc.)", "XHTTP stream-one H3")
+	case "hysteria":
+		return "hysteria", nil
 	default:
 		return "", errors.New("Config: unknown transport protocol: ", p)
 	}
@@ -934,11 +1087,54 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 	}, nil
 }
 
+var (
+	udpmaskLoader = NewJSONConfigLoader(ConfigCreatorCache{
+		"salamander": func() interface{} { return new(Salamander) },
+	}, "type", "settings")
+)
+
+type Salamander struct {
+	Password string `json:"password"`
+}
+
+func (c *Salamander) Build() (proto.Message, error) {
+	config := &salamander.Config{}
+	config.Password = c.Password
+	return config, nil
+}
+
+type FinalMask struct {
+	Type     string           `json:"type"`
+	Settings *json.RawMessage `json:"settings"`
+}
+
+func (c *FinalMask) Build(tcpmaskLoader bool) (proto.Message, error) {
+	loader := udpmaskLoader
+	if tcpmaskLoader {
+		return nil, errors.New("")
+	}
+
+	settings := []byte("{}")
+	if c.Settings != nil {
+		settings = ([]byte)(*c.Settings)
+	}
+	rawConfig, err := loader.LoadWithID(settings, c.Type)
+	if err != nil {
+		return nil, err
+	}
+	ts, err := rawConfig.(Buildable).Build()
+	if err != nil {
+		return nil, err
+	}
+	return ts, nil
+}
+
 type StreamConfig struct {
 	Address             *Address           `json:"address"`
 	Port                uint16             `json:"port"`
 	Network             *TransportProtocol `json:"network"`
 	Security            string             `json:"security"`
+	Udpmasks            []*FinalMask       `json:"udpmasks"`
 	TLSSettings         *TLSConfig         `json:"tlsSettings"`
 	REALITYSettings     *REALITYConfig     `json:"realitySettings"`
 	RAWSettings         *TCPConfig         `json:"rawSettings"`
@@ -949,6 +1145,7 @@ type StreamConfig struct {
 	GRPCSettings        *GRPCConfig        `json:"grpcSettings"`
 	WSSettings          *WebSocketConfig   `json:"wsSettings"`
 	HTTPUPGRADESettings *HttpUpgradeConfig `json:"httpupgradeSettings"`
+	HysteriaSettings    *HysteriaConfig    `json:"hysteriaSettings"`
 	SocketSettings      *SocketConfig      `json:"sockopt"`
 }
 
@@ -968,6 +1165,7 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		}
 		config.ProtocolName = protocol
 	}
+
 	switch strings.ToLower(c.Security) {
 	case "", "none":
 	case "tls":
@@ -1001,6 +1199,7 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 	default:
 		return nil, errors.New(`Unknown security "` + c.Security + `".`)
 	}
+
 	if c.RAWSettings != nil {
 		c.TCPSettings = c.RAWSettings
 	}
@@ -1067,6 +1266,16 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 			Settings:     serial.ToTypedMessage(hs),
 		})
 	}
+	if c.HysteriaSettings != nil {
+		hs, err := c.HysteriaSettings.Build()
+		if err != nil {
+			return nil, errors.New("Failed to build Hysteria config.").Base(err)
+		}
+		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
+			ProtocolName: "hysteria",
+			Settings:     serial.ToTypedMessage(hs),
+		})
+	}
 	if c.SocketSettings != nil {
 		ss, err := c.SocketSettings.Build()
 		if err != nil {
@@ -1074,6 +1283,15 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		}
 		config.SocketSettings = ss
 	}
+
+	for _, mask := range c.Udpmasks {
+		u, err := mask.Build(false)
+		if err != nil {
+			return nil, errors.New("failed to build mask with type ", mask.Type).Base(err)
+		}
+		config.Udpmasks = append(config.Udpmasks, serial.ToTypedMessage(u))
+	}
+
 	return config, nil
 }
 
