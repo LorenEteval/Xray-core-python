@@ -12,7 +12,7 @@ jobs:
         os: [ ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, windows-11-arm, macos-15-intel, macos-14, macos-15 ]
         python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14" ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
@@ -39,7 +39,7 @@ jobs:
     needs:
       - build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
