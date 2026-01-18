@@ -17,6 +17,7 @@ import (
 	"github.com/xtls/xray-core/common/task"
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/features/policy"
+	hyCtx "github.com/xtls/xray-core/proxy/hysteria/ctx"
 	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/internet"
 	"github.com/xtls/xray-core/transport/internet/hysteria"
@@ -55,7 +56,7 @@ func (c *Client) Process(ctx context.Context, link *transport.Link, dialer inter
 	ob.CanSpliceCopy = 3
 	target := ob.Target
 
-	conn, err := dialer.Dial(ctx, c.server.Destination)
+	conn, err := dialer.Dial(hyCtx.ContextWithRequireDatagram(ctx, target.Network == net.Network_UDP), c.server.Destination)
 	if err != nil {
 		return errors.New("failed to find an available destination").AtWarning().Base(err)
 	}
