@@ -40,7 +40,7 @@ jobs:
               break
             fi
           done
-          LIST=('amd64' 'x86' 'arm64' 'arm')
+          LIST=('amd64' 'x86' 'arm64')
           for ARCHITECTURE in "${LIST[@]}"
           do
             echo -e "Checking wintun.dll for ${ARCHITECTURE}..."
@@ -114,9 +114,6 @@ jobs:
           # Windows ARM
           - goos: windows
             goarch: arm64
-          - goos: windows
-            goarch: arm
-            goarm: 7
           # BEGIN Other architectures
           # BEGIN riscv64 & ARM64 & LOONG64
           - goos: linux
@@ -250,9 +247,6 @@ jobs:
             if [[ ${GOARCH} == 'arm64' ]]; then
               mv resources/wintun/bin/arm64/wintun.dll build_assets/
             fi
-            if [[ ${GOARCH} == 'arm' ]]; then
-              mv resources/wintun/bin/arm/wintun.dll build_assets/
-            fi
             mv resources/wintun/LICENSE.txt build_assets/LICENSE-wintun.txt
           fi
 
@@ -286,7 +280,7 @@ jobs:
           file_glob: true
 
       - name: Upload files to Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: Xray-${{ env.ASSET_NAME }}
           path: |

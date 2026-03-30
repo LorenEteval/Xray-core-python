@@ -31,7 +31,18 @@ func (s *server) Addr() net.Addr {
 	return nil
 }
 
-func (s *server) Handle(conn net.Conn) (stat.Connection, error) {
+func (s *server) Handle(conn net.Conn) {
+	upgradedConn, err := s.upgrade(conn)
+	if err != nil {
+		common.CloseIfExists(conn)
+		errors.LogInfoInner(context.Background(), err, "failed to handle request")
+		return
+	}
+	s.addConn(upgradedConn)
+}
+
+// upgrade execute a fake websocket upgrade process and return the available connection
+func (s *server) upgrade(conn net.Conn) (stat.Connection, error) {
 	connReader := bufio.NewReader(conn)
 	req, err := http.ReadRequest(connReader)
 	if err != nil {
@@ -52,7 +63,6 @@ func (s *server) Handle(conn net.Conn) (stat.Connection, error) {
 	connection := strings.ToLower(req.Header.Get("Connection"))
 	upgrade := strings.ToLower(req.Header.Get("Upgrade"))
 	if connection != "upgrade" || upgrade != "websocket" {
-		_ = conn.Close()
 		return nil, errors.New("unrecognized request")
 	}
 	resp := &http.Response{
@@ -67,7 +77,6 @@ func (s *server) Handle(conn net.Conn) (stat.Connection, error) {
 	resp.Header.Set("Upgrade", "websocket")
 	err = resp.Write(conn)
 	if err != nil {
-		_ = conn.Close()
 		return nil, err
 	}
 
@@ -99,12 +108,7 @@ func (s *server) keepAccepting() {
 		if err != nil {
 			return
 		}
-		handledConn, err := s.Handle(conn)
-		if err != nil {
-			errors.LogInfoInner(context.Background(), err, "failed to handle request")
-			continue
-		}
-		s.addConn(handledConn)
+		go s.Handle(conn)
 	}
 }
 
@@ -136,6 +140,10 @@ func ListenHTTPUpgrade(ctx context.Context, address net.Address, port net.Port, 
 			return nil, errors.New("failed to listen TCP(for HttpUpgrade) on ", address, ":", port).Base(err)
 		}
 		errors.LogInfo(ctx, "listening TCP(for HttpUpgrade) on ", address, ":", port)
+	}
+
+	if streamSettings.TcpmaskManager != nil {
+		listener, _ = streamSettings.TcpmaskManager.WrapListener(listener)
 	}
 
 	if streamSettings.SocketSettings != nil && streamSettings.SocketSettings.AcceptProxyProtocol {

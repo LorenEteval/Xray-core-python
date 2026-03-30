@@ -33,7 +33,7 @@ jobs:
 
       - name: Update Geodat
         id: update
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 60
           retry_wait_seconds: 60
@@ -82,14 +82,14 @@ jobs:
 
       - name: Update Wintun
         id: update
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 60
           retry_wait_seconds: 60
           max_attempts: 60
           command: |
             [ -d 'resources' ] || mkdir resources
-            LIST=('amd64' 'x86' 'arm64' 'arm')
+            LIST=('amd64' 'x86' 'arm64')
             for ARCHITECTURE in "${LIST[@]}"
             do
               FILE_PATH="resources/wintun/bin/${ARCHITECTURE}/wintun.dll"
