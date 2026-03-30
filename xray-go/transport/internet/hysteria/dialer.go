@@ -174,8 +174,9 @@ func (c *client) dial() error {
 			IP:    remote.(*net.UDPAddr).IP,
 			Ports: c.config.Ports,
 		}
-		pktConn, err = udphop.NewUDPHopPacketConn(addr, time.Duration(c.config.Interval)*time.Second, c.udphopDialer, pktConn, index)
+		pktConn, err = udphop.NewUDPHopPacketConn(addr, c.config.IntervalMin, c.config.IntervalMax, c.udphopDialer, pktConn, index)
 		if err != nil {
+			raw.Close()
 			return errors.New("udphop err").Base(err)
 		}
 	}
@@ -183,6 +184,7 @@ func (c *client) dial() error {
 	if c.udpmaskManager != nil {
 		pktConn, err = c.udpmaskManager.WrapPacketConnClient(pktConn)
 		if err != nil {
+			raw.Close()
 			return errors.New("mask err").Base(err)
 		}
 	}
