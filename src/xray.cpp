@@ -15,13 +15,26 @@ namespace {
         GoString apiServerString{apiServer.data(), static_cast<ptrdiff_t>(apiServer.size())};
         GoString myPatternString{myPattern.data(), static_cast<ptrdiff_t>(myPattern.size())};
 
-        char* ptr = queryStats(apiServerString, static_cast<GoInt>(timeout), myPatternString, static_cast<GoUint8>(reset));
+        char* ptr = nullptr;
 
-        std::string result{ptr};
+        {
+            py::gil_scoped_release release;
 
-        freeCString(ptr);
+            ptr = queryStats(apiServerString, static_cast<GoInt>(timeout), myPatternString, static_cast<GoUint8>(reset));
 
-        return result;
+            py::gil_scoped_acquire acquire;
+        }
+
+        if (ptr == nullptr) {
+            return "";
+        }
+        else {
+            std::string result{ptr};
+
+            freeCString(ptr);
+
+            return result;
+        }
     }
 
     void startFromJSON(const std::string& json)
