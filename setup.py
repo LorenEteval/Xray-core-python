@@ -13,7 +13,7 @@ CMAKE_BUILD_CACHE = 'CMakeBuildCache'
 
 
 def getXrayCoreVersion():
-    return '1.8.26.6'
+    return '1.8.26.7'
 
 
 def runCommand(command):
