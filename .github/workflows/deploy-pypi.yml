@@ -16,9 +16,15 @@ jobs:
           - name: linux-x86_64
             os: ubuntu-24.04
             arch: x86_64
+          - name: linux-aarch64
+            os: ubuntu-24.04-arm
+            arch: aarch64
           - name: windows-x86_64
             os: windows-2022
             arch: AMD64
+          - name: windows-arm64
+            os: windows-11-arm
+            arch: ARM64
           - name: macos-x86_64
             os: macos-15-intel
             arch: x86_64
@@ -40,7 +46,7 @@ jobs:
           cache-dependency-path: xray-go/go.sum
 
       - name: Install MinGW-w64
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && matrix.arch == 'AMD64'
         shell: pwsh
         run: |
           choco install mingw --no-progress --yes
@@ -49,6 +55,37 @@ jobs:
             throw "MinGW-w64 bin directory was not found: $mingwBin"
           }
           $mingwBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      # GCC does not target Windows ARM64. Use an ARM-native LLVM-MinGW
+      # distribution so Go/cgo and CMake produce compatible ARM64 objects.
+      - name: Install LLVM-MinGW for Windows ARM64
+        if: runner.os == 'Windows' && matrix.arch == 'ARM64'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'llvm-mingw-20260616-ucrt-aarch64.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'llvm-mingw'
+          $url = 'https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-aarch64.zip'
+          $expectedHash = '312593669435bd0bfc1a43ac3fba23c8b27e0610bade88b2738e5a01702a99ba'
+
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualHash -ne $expectedHash) {
+            throw "LLVM-MinGW checksum mismatch: $actualHash"
+          }
+
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          $toolchainBin = Get-ChildItem -Path $destination -Filter gcc.exe -File -Recurse |
+            Where-Object { $_.Directory.Name -eq 'bin' } |
+            Select-Object -First 1 -ExpandProperty DirectoryName
+          if (-not $toolchainBin) {
+            throw 'LLVM-MinGW bin directory was not found'
+          }
+
+          $target = & (Join-Path $toolchainBin 'gcc.exe') -dumpmachine
+          if ($target -ne 'aarch64-w64-windows-gnu') {
+            throw "LLVM-MinGW has the wrong target: $target"
+          }
+          $toolchainBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build and test wheels
         uses: pypa/cibuildwheel@v3.4.1
