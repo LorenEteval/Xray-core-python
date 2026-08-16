@@ -4,13 +4,13 @@
     // ARM64 thread environment block, but LLVM-MinGW does not provide it.
     // Windows reserves x18 for that pointer, so provide the equivalent here.
     #include <cstdint>
-    static inline std::uintptr_t xrayGetArm64ThreadEnvironmentBlock()
+    static inline std::uintptr_t getArm64ThreadPointer()
     {
         std::uintptr_t value;
         __asm__ __volatile__("mov %0, x18" : "=r"(value));
         return value;
     }
-    #define __getReg(registerNumber) xrayGetArm64ThreadEnvironmentBlock()
+    #define __getReg(registerNumber) getArm64ThreadPointer()
 #endif
 #if defined _WIN64
     #define _hypot hypot
