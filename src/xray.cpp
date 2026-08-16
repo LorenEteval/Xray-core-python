@@ -1,9 +1,22 @@
 #include <string>
+#if defined(__MINGW32__) && defined(_M_ARM64)
+    #include <cstdint>
+    static inline std::uintptr_t xrayGetArm64ThreadEnvironmentBlock()
+    {
+        std::uintptr_t value;
+        __asm__ __volatile__("mov %0, x18" : "=r"(value));
+        return value;
+    }
+    #define __getReg(registerNumber) xrayGetArm64ThreadEnvironmentBlock()
+#endif
 #if defined _WIN64
     #define _hypot hypot
     #include <cmath>
 #endif
 #include <pybind11/pybind11.h>
+#if defined(__MINGW32__) && defined(_M_ARM64)
+    #undef __getReg
+#endif
 
 #include "xray.h"
 
