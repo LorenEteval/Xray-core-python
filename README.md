@@ -6,27 +6,29 @@ Python bindings for [Xray-core](https://github.com/XTLS/Xray-core).
 
 ## Install
 
-### Core Building Tools
-
-You have to install the following tools to be able to install this package successfully.
-
-* [go](https://go.dev/doc/install) in your PATH. go 1.20.0 and above is recommended. To check go is ready,
-  type `go version`. Also, if google service is blocked in your region(such as Mainland China), you have to configure
-  your GOPROXY to be able to pull go packages. For Chinese users, refer to [goproxy.cn](https://goproxy.cn/) for more
-  information.
-* [cmake](https://cmake.org/download/) in your PATH. To check cmake is ready, type `cmake --version`.
-* A working GNU C++ compiler(i.e. GNU C++ toolchains). To check GNU C++ compiler is ready, type `g++ --version`. These
-  tools should have been installed in Linux or macOS by default. If you don't have GNU C++ toolchains(especially for
-  Windows users) anyway:
-
-    * For Linux users: type `sudo apt update && sudo apt install g++` and that should work out fine.
-    * For Windows users: install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/)
-      or [Cygwin](https://www.cygwin.com/) and make sure you have add them to PATH.
-
-### Install Package
+Prebuilt binary wheels include the native Go and C++ binding, so a supported installation does not require Go, CMake,
+or a C++ compiler.
 
 ```
 pip install Xray-core
+```
+
+Binary wheels are published for Linux x86-64 and ARM64, Windows x86-64 and ARM64, and macOS Intel and Apple Silicon.
+
+### Build from Source
+
+A source distribution is also published as a fallback. If pip cannot find a compatible wheel, it may build the native
+binding from source. A source build requires:
+
+* [Go 1.26 or newer](https://go.dev/doc/install) in `PATH`.
+* A working C and C++ compiler toolchain.
+* MinGW-w64 on Windows x86-64, or LLVM-MinGW on Windows ARM64, with `gcc` and `g++` available in `PATH`.
+
+The isolated Python build environment installs CMake, pybind11, setuptools, and wheel automatically. To build directly
+from a repository checkout:
+
+```
+pip install .
 ```
 
 ## API
@@ -66,22 +68,18 @@ To make installation of this package easier, I didn't add the original [Xray-cor
 source code as a submodule. To track what modifications have been made to the source code, you can compare it with the
 same version under Python binding and corresponding go repository.
 
-## Tested Platform
+## Binary Wheel Platforms
 
-Xray-core-python works on all major platform with all Python version(Python 3).
+The distributions are built and tested in [GitHub Actions](https://github.com/LorenEteval/Xray-core-python/actions).
 
-Below are tested build in [github actions](https://github.com/LorenEteval/Xray-core-python/actions).
-
-| Platform     | Python 3.8-Python 3.14 |
-|--------------|:----------------------:|
-| ubuntu 22.04 |   :heavy_check_mark:   |
-| ubuntu 24.04 |   :heavy_check_mark:   |
-| windows-2019 |   :heavy_check_mark:   |
-| windows-2022 |   :heavy_check_mark:   |
-| windows-2025 |   :heavy_check_mark:   |
-| macos-13     |   :heavy_check_mark:   |
-| macos-14     |   :heavy_check_mark:   |
-| macos-15     |   :heavy_check_mark:   |
+| Platform | Architecture | CPython |
+|----------|--------------|---------|
+| Linux | x86-64 | 3.8-3.14, 3.13t, 3.14t |
+| Linux | ARM64 | 3.8-3.14, 3.13t, 3.14t |
+| Windows | x86-64 | 3.8-3.14, 3.13t, 3.14t |
+| Windows | ARM64 | 3.9-3.14, 3.13t, 3.14t |
+| macOS | Intel | 3.8-3.14, 3.13t, 3.14t |
+| macOS | Apple Silicon | 3.8-3.14, 3.13t, 3.14t |
 
 ## License
 
