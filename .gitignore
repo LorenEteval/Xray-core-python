@@ -178,3 +178,5 @@ CMakeBuildCache
 
 # Go build header files
 gobuild/*.h
+
+.codegraph/
