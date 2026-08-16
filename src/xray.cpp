@@ -1,5 +1,8 @@
 #include <string>
 #if defined(__MINGW32__) && defined(_M_ARM64)
+    // CPython 3.14t uses MSVC's __getReg(18) intrinsic to read the Windows
+    // ARM64 thread environment block, but LLVM-MinGW does not provide it.
+    // Windows reserves x18 for that pointer, so provide the equivalent here.
     #include <cstdint>
     static inline std::uintptr_t xrayGetArm64ThreadEnvironmentBlock()
     {
@@ -63,6 +66,9 @@ namespace {
         }
     }
 
+    // TODO: After auditing and testing the C++ and Go paths for free-threaded
+    // safety, use PYBIND11_MODULE(xray, m, py::mod_gil_not_used()) so importing
+    // this extension does not cause free-threaded CPython to enable the GIL.
     PYBIND11_MODULE(xray, m) {
         m.def("queryStats",
             &queryStats,
