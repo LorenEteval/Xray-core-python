@@ -1,12 +1,26 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(xray C CXX)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/lib/${PROJECT_NAME})
+set(PYBIND11_FINDPYTHON ON)
+if (PYBIND11_SOURCE_DIR)
+    add_subdirectory("${PYBIND11_SOURCE_DIR}" pybind11)
+else()
+    find_package(pybind11 CONFIG REQUIRED)
+endif ()
 
-add_subdirectory(pybind11)
+if (NOT XRAY_CORE_ARCHIVE)
+    set(XRAY_CORE_ARCHIVE "${CMAKE_SOURCE_DIR}/gobuild/xray.a")
+    if (WIN32)
+        set(XRAY_CORE_ARCHIVE "${CMAKE_SOURCE_DIR}/gobuild/xray.lib")
+    endif ()
+endif ()
+
+if (NOT XRAY_CORE_INCLUDE_DIR)
+    set(XRAY_CORE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/gobuild")
+endif ()
 
 pybind11_add_module(${PROJECT_NAME} src/xray.cpp)
 
@@ -24,12 +38,12 @@ if (WIN32)
 
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
-        ${CMAKE_SOURCE_DIR}/gobuild/xray.lib
+        "${XRAY_CORE_ARCHIVE}"
     )
 else()
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
-        ${CMAKE_SOURCE_DIR}/gobuild/xray.a
+        "${XRAY_CORE_ARCHIVE}"
         "-lresolv"
     )
 
@@ -42,4 +56,4 @@ else()
     endif ()
 endif ()
 
-target_include_directories(${PROJECT_NAME} PRIVATE gobuild)
+target_include_directories(${PROJECT_NAME} PRIVATE "${XRAY_CORE_INCLUDE_DIR}")

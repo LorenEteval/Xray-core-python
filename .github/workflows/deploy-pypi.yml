@@ -1,100 +1,151 @@
 name: Deploy PyPI
 
-on: [ push, pull_request ]
+on: [push, pull_request]
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: ${{ matrix.os }} Python ${{ matrix.python-version }}
+  build-wheels:
+    name: Build wheels (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, macos-15-intel, macos-14, macos-15 ]
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14" ]
+        include:
+          - name: linux-x86_64
+            os: ubuntu-24.04
+            arch: x86_64
+          - name: windows-x86_64
+            os: windows-2022
+            arch: AMD64
+          - name: macos-x86_64
+            os: macos-15-intel
+            arch: x86_64
+          - name: macos-arm64
+            os: macos-15
+            arch: arm64
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26"
-          check-latest: true
-      - uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-          check-latest: true
-      - name: Install, build & run sample
-        run: |
-          go version
-          python --version
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel
-          python setup.py sdist
-          python setup.py install
-          python sample/sample.py
+          persist-credentials: false
 
-  store:
-    # Python 3.12 later version has package name twitch (Xray-core... -> xray_core...)
-    # See v1.8.10 runner history for more details
-    name: Store the distribution packages
-    runs-on: ubuntu-latest
-    needs:
-      - build
+      # Linux builds run in manylinux containers, so Go is installed by
+      # tool.cibuildwheel.linux.before-all inside those containers instead.
+      - uses: actions/setup-go@v7
+        if: runner.os != 'Linux'
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache-dependency-path: xray-go/go.sum
+
+      - name: Install MinGW-w64
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install mingw --no-progress --yes
+          $mingwBin = 'C:\ProgramData\mingw64\mingw64\bin'
+          if (-not (Test-Path -LiteralPath $mingwBin)) {
+            throw "MinGW-w64 bin directory was not found: $mingwBin"
+          }
+          $mingwBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build and test wheels
+        uses: pypa/cibuildwheel@v3.4.1
+        with:
+          output-dir: wheelhouse
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+
+      - name: Store wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.name }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  build-sdist:
+    name: Build source distribution
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.13"
           check-latest: true
-      - name: Install & build
+      - name: Build and validate sdist
         run: |
-          python --version
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel
-          python setup.py sdist
-      - name: Store the distribution packages
+          python -m pip install --upgrade build twine
+          python -m build --sdist --outdir dist
+          python -m twine check dist/*
+      - name: Store source distribution
+        uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  collect-distributions:
+    name: Collect distribution packages
+    runs-on: ubuntu-24.04
+    needs:
+      - build-wheels
+      - build-sdist
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - name: Download source distribution
+        uses: actions/download-artifact@v8
+        with:
+          name: sdist
+          path: dist
+      - name: Store all distribution packages
         uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
-          path: |
-            dist/*.tar.gz
-            dist/*.whl
+          path: dist/*
+          if-no-files-found: error
 
   publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    name: Publish Python distributions to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
     needs:
-      - build
-      - store
-    runs-on: ubuntu-latest
+      - collect-distributions
+    runs-on: ubuntu-24.04
     environment:
       name: deploy-pypi
       url: https://pypi.org/p/Xray-core
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
     steps:
-      - name: Download all the dists
+      - name: Download all distributions
         uses: actions/download-artifact@v8
         with:
           name: python-package-distributions
-          path: dist/
-      - name: Publish distribution 📦 to PyPI
+          path: dist
+      - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
-    name: >-
-      Upload to GitHub Release
+    name: Upload distributions to GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
     needs:
       - publish-to-pypi
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
-      contents: write  # IMPORTANT: mandatory for making GitHub Releases
-      id-token: write  # IMPORTANT: mandatory for sigstore
+      contents: write
     steps:
-      - name: Download all the dists
+      - name: Download all distributions
         uses: actions/download-artifact@v8
         with:
           name: python-package-distributions
-          path: dist/
+          path: dist
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -103,11 +154,10 @@ jobs:
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
           --notes ""
-      - name: Upload artifact to GitHub Release
+      - name: Upload distributions to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        # Upload to GitHub Release using the `gh` CLI.
         run: >-
           gh release upload
-          '${{ github.ref_name }}' dist/**
+          '${{ github.ref_name }}' dist/*
           --repo '${{ github.repository }}'

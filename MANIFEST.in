@@ -1,7 +1,6 @@
-recursive-include gobuild *
-recursive-include xray xray.*
+recursive-include xray *.py
 recursive-include xray-go *
-recursive-include pybind11 *
 recursive-include src *
 include CMakeLists.txt
 include README.md
+include pyproject.toml
