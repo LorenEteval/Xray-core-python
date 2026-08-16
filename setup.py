@@ -16,7 +16,7 @@ BINDING_NAME = 'xray'
 
 
 def getXrayCoreVersion():
-    return '1.8.26.7'
+    return '1.8.26.8'
 
 
 class CMakeExtension(Extension):
