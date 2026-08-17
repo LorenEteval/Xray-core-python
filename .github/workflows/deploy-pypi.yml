@@ -88,7 +88,7 @@ jobs:
           $toolchainBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build and test current wheels
-        uses: pypa/cibuildwheel@v4.1.1
+        uses: pypa/cibuildwheel@v4.2.0
         with:
           output-dir: wheelhouse
         env:
@@ -98,7 +98,7 @@ jobs:
       # interpreter. Keep the final cibuildwheel 3 release narrowly scoped to
       # those wheels for as long as this project publishes them.
       - name: Build and test CPython 3.8 and 3.13t wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v4.2.0
         with:
           output-dir: wheelhouse
         env:
