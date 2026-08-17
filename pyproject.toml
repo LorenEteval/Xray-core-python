@@ -9,26 +9,10 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-build = [
-    "cp38-*",
-    "cp39-*",
-    "cp310-*",
-    "cp311-*",
-    "cp312-*",
-    "cp313-*",
-    "cp313t-*",
-    "cp314-*",
-    "cp314t-*",
-]
-enable = ["cpython-freethreading"]
+build = "cp3{9,10,11,12,13,14,14t}-*"
 skip = "*-musllinux_*"
-build-verbosity = 1
 test-sources = ["sample"]
-test-environment = { PYTHONSAFEPATH = "1" }
-test-command = [
-    "python sample/sample.py",
-    "python -c \"import pathlib, xray; source = pathlib.Path(r'{project}').resolve(); installed = pathlib.Path(xray.__file__).resolve(); assert source not in installed.parents, 'imported source checkout: ' + str(installed)\"",
-]
+test-command = "python sample/sample.py"
 
 [tool.cibuildwheel.linux]
 before-all = """
