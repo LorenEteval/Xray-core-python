@@ -322,15 +322,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
-          prerelease_flag=""
-          if [[ "$(<UPSTREAM_PRERELEASE)" == "true" ]]; then
-            prerelease_flag="--prerelease"
-          fi
           gh release create "$RELEASE_TAG" \
             --repo '${{ github.repository }}' \
             --verify-tag \
-            --notes-file release-notes.md \
-            $prerelease_flag
+            --notes-file release-notes.md
       - name: Upload distributions to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}

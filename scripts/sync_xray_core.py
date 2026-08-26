@@ -868,14 +868,7 @@ def command_guard_release(args: argparse.Namespace) -> None:
 
 
 def release_notes(provenance: dict[str, Any]) -> str:
-    notes = [
-        f"Corresponds to Xray-core {provenance['upstream_tag']}",
-        '',
-        f"Upstream commit: `{provenance['upstream_commit']}`",
-    ]
-    if provenance.get('upstream_prerelease'):
-        notes.extend(['', 'The corresponding upstream release is a prerelease.'])
-    return '\n'.join(notes) + '\n'
+    return f"Corresponds to Xray-core {provenance['upstream_tag']}\n"
 
 
 def command_release_notes(args: argparse.Namespace) -> None:

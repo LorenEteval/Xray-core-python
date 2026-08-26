@@ -168,16 +168,14 @@ class ProvenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(sync.SyncError, 'mapped more than once'):
             sync.validate_release_history(duplicate)
 
-    def test_release_notes_contain_required_correspondence(self):
+    def test_release_notes_only_contain_required_correspondence(self):
         metadata = {
             'upstream_tag': 'v26.3.27',
             'upstream_commit': COMMIT,
             'upstream_prerelease': True,
         }
         notes = sync.release_notes(metadata)
-        self.assertIn('Corresponds to Xray-core v26.3.27', notes)
-        self.assertIn(COMMIT, notes)
-        self.assertIn('prerelease', notes)
+        self.assertEqual(notes, 'Corresponds to Xray-core v26.3.27\n')
 
     def test_manifest_is_deterministic(self):
         with tempfile.TemporaryDirectory() as temp_name:
