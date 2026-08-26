@@ -289,11 +289,15 @@ jobs:
           path: dist
       - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   github-release:
     name: Upload distributions to GitHub Release
     if: >-
-      startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+      always() &&
+      needs.publish-to-pypi.result == 'success' &&
+      (startsWith(github.ref, 'refs/tags/') || inputs.release_tag != '')
     needs:
       - publish-to-pypi
     runs-on: ubuntu-24.04
