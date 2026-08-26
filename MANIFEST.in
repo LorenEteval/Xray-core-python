@@ -4,3 +4,9 @@ recursive-include src *
 include CMakeLists.txt
 include README.md
 include pyproject.toml
+include VERSION
+include UPSTREAM_VERSION
+include UPSTREAM_COMMIT
+include UPSTREAM_PRERELEASE
+include UPSTREAM_RELEASE_DATE
+recursive-include upstream *.json

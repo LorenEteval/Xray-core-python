@@ -33,28 +33,6 @@ Example:
 	Run: executeQueryStats,
 }
 
-func QueryStats(serverAddr string, timeout int, pattern string, reset bool) string {
-	conn, ctx, close := dialAPIServerTarget(serverAddr, timeout)
-
-	if conn == nil {
-		// Failed to dial API server
-		return "Failed to dial API server"
-	}
-	defer close()
-
-	client := statsService.NewStatsServiceClient(conn)
-	r := &statsService.QueryStatsRequest{
-		Pattern: pattern,
-		Reset_:  reset,
-	}
-	resp, err := client.QueryStats(ctx, r)
-	if err != nil {
-		// Failed to query stats
-		return "Failed to query stats"
-	}
-	return getJSONResponse(resp)
-}
-
 func executeQueryStats(cmd *base.Command, args []string) {
 	setSharedFlags(cmd)
 	pattern := cmd.Flag.String("pattern", "", "")

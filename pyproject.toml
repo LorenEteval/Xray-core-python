@@ -15,23 +15,38 @@ test-sources = ["sample"]
 test-command = "python sample/sample.py"
 
 [tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
 before-all = """
+set -eu
+go_mod='{package}/xray-go/go.mod'
+go_version="$(awk '$1 == "toolchain" { sub(/^go/, "", $2); print $2; exit }' "${go_mod}")"
+if [ -z "${go_version}" ]; then
+    go_version="$(awk '$1 == "go" { print $2; exit }' "${go_mod}")"
+fi
+if [ -z "${go_version}" ]; then
+    echo "No go or toolchain directive found in ${go_mod}" >&2
+    exit 1
+fi
 case "$(uname -m)" in
     x86_64)
         go_arch='amd64'
-        go_sha256='708effb774be8237570d0add163225abbdfaf4fca28b2611df167beba4feef89'
         ;;
     aarch64|arm64)
         go_arch='arm64'
-        go_sha256='d0507e9e9d7fe012aae570108cbd76c15de879e17130ab8cb90d4d7445cb1f2e'
         ;;
     *)
         echo "Unsupported Linux architecture: $(uname -m)" >&2
         exit 1
         ;;
 esac
-go_archive="/tmp/go1.26.6.linux-${go_arch}.tar.gz"
-curl -fsSLo "${go_archive}" "https://go.dev/dl/go1.26.6.linux-${go_arch}.tar.gz"
+go_metadata='/tmp/go-downloads.json'
+curl -fsSLo "${go_metadata}" 'https://go.dev/dl/?mode=json&include=all'
+go_file_info="$(python -c 'import json, sys; requested, arch = sys.argv[2:]; releases = json.load(open(sys.argv[1], encoding="utf-8")); versions = [release for release in releases if release["version"] == "go" + requested or (requested.count(".") == 1 and release.get("stable") and release["version"].startswith("go" + requested + "."))]; release = versions[0]; file = next(file for file in release["files"] if file["os"] == "linux" and file["arch"] == arch and file["kind"] == "archive"); print(file["filename"], file["sha256"])' "${go_metadata}" "${go_version}" "${go_arch}")"
+go_filename="${go_file_info%% *}"
+go_sha256="${go_file_info#* }"
+go_archive="/tmp/${go_filename}"
+curl -fsSLo "${go_archive}" "https://go.dev/dl/${go_filename}"
 echo "${go_sha256}  ${go_archive}" | sha256sum -c -
 tar -C /usr/local -xzf "${go_archive}"
 /usr/local/go/bin/go version

@@ -23,6 +23,10 @@
 
 #include "xray.h"
 
+#ifndef XRAY_CORE_PYTHON_VERSION
+    #error "XRAY_CORE_PYTHON_VERSION must be defined by the build system"
+#endif
+
 namespace py = pybind11;
 
 namespace {
@@ -80,6 +84,6 @@ namespace {
             "Start Xray client with JSON string",
             py::arg("json"));
 
-        m.attr("__version__") = "1.8.26.9";
+        m.attr("__version__") = XRAY_CORE_PYTHON_VERSION;
     }
 }

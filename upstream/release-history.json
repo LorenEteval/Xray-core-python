@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "releases": [
+    {
+      "downstream_version": "1.8.26.9",
+      "upstream_commit": "5ca6f4b7d4dc20a881d4330e498892697627ec0c",
+      "upstream_prerelease": true,
+      "upstream_published_at": "2026-07-28T08:00:45Z",
+      "upstream_tag": "v26.7.28"
+    }
+  ]
+}

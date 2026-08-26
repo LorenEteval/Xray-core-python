@@ -3,7 +3,6 @@ package serial
 import (
 	"context"
 	"io"
-	"strings"
 
 	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/platform"
@@ -67,16 +66,6 @@ func BuildConfig(files []*core.ConfigSource) (*core.Config, error) {
 	return config.Build()
 }
 
-func BuildConfigFromJSONString(jsonString string) (*core.Config, error) {
-	cf := &conf.Config{}
-	c, err := DecodeJSONConfig(strings.NewReader(jsonString))
-	if err != nil {
-		return nil, errors.New("failed to decode JSON config string").Base(err)
-	}
-	*cf = *c
-	return cf.Build()
-}
-
 type readerDecoder func(io.Reader) (*conf.Config, error)
 
 var ReaderDecoderByFormat = make(map[string]readerDecoder)
@@ -87,6 +76,5 @@ func init() {
 	ReaderDecoderByFormat["toml"] = DecodeTOMLConfig
 
 	core.ConfigBuilderForFiles = BuildConfig
-	core.ConfigBuilderForJson = BuildConfigFromJSONString
 	core.ConfigMergedFormFiles = MergeConfigFromFiles
 }

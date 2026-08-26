@@ -1,14 +1,5 @@
 package main
 
-/*
-#include <stdlib.h>
-*/
-import "C"
-import (
-	"github.com/xtls/xray-core/main/commands/all/api"
-	"unsafe"
-)
-
 import (
 	"fmt"
 	"log"
@@ -105,49 +96,6 @@ func executeRun(cmd *base.Command, args []string) {
 		os.Exit(-1)
 	}
 	defer server.Close()
-
-	// Explicitly triggering GC to remove garbage from config loading.
-	runtime.GC()
-	debug.FreeOSMemory()
-
-	{
-		osSignals := make(chan os.Signal, 1)
-		signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
-		<-osSignals
-	}
-}
-
-//export freeCString
-func freeCString(ptr *C.char) {
-	C.free(unsafe.Pointer(ptr))
-}
-
-//export queryStats
-func queryStats(serverAddr string, timeout int, pattern string, reset bool) *C.char {
-	return C.CString(api.QueryStats(serverAddr, timeout, pattern, reset))
-}
-
-//export startFromJSON
-func startFromJSON(jsonString string) {
-	// printVersion()
-	server, err := startXrayFromJSON(jsonString)
-	if err != nil {
-		// fmt.Println("Failed to start:", err)
-		// Configuration error. Exit with a special value to prevent systemd from restarting.
-		os.Exit(23)
-	}
-
-	if err := server.Start(); err != nil {
-		// fmt.Println("Failed to start:", err)
-		os.Exit(-1)
-	}
-	defer server.Close()
-
-	/*
-		conf.FileCache = nil
-		conf.IPCache = nil
-		conf.SiteCache = nil
-	*/
 
 	// Explicitly triggering GC to remove garbage from config loading.
 	runtime.GC()
@@ -263,20 +211,6 @@ func getConfigFormat() string {
 		f = "auto"
 	}
 	return f
-}
-
-func startXrayFromJSON(jsonString string) (core.Server, error) {
-	c, err := core.ConfigBuilderForJson(jsonString)
-	if err != nil {
-		return nil, errors.New("failed to load config from JSON string").Base(err)
-	}
-
-	server, err := core.New(c)
-	if err != nil {
-		return nil, errors.New("failed to create server").Base(err)
-	}
-
-	return server, nil
 }
 
 func startXray() (core.Server, error) {

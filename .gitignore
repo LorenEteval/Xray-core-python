@@ -30,6 +30,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+!xray-go/.github/build/
+!xray-go/.github/build/**
 develop-eggs/
 dist/
 downloads/

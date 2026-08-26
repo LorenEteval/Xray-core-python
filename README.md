@@ -56,17 +56,13 @@ FUNCTIONS
         Start Xray client with JSON string
 ```
 
-## Source Code Modification
+## Vendored Xray-core Source
 
-This repository, including the package that distributes to pypi,
-contains [Xray-core](https://github.com/XTLS/Xray-core) source code that's been
-modified to build the binding and specific API. If without explicitly remark, the version of this package corresponds to
-the version of the origin source code tag, so the binding will have full features as the original go distribution will
-have. And due to its backward compatibility, there's no plan to generate bindings for older release of Xray-core.
+The source distribution vendors an exact [Xray-core](https://github.com/XTLS/Xray-core) release so users can build the
+native binding without resolving a Git submodule. Binding-owned Go files are maintained separately from upstream-owned
+files, and a checked-in SHA-256 manifest makes unexpected changes fail validation.
 
-To make installation of this package easier, I didn't add the original [Xray-core](https://github.com/XTLS/Xray-core)
-source code as a submodule. To track what modifications have been made to the source code, you can compare it with the
-same version under Python binding and corresponding go repository.
+`UPSTREAM_VERSION`, `UPSTREAM_COMMIT`, and the files under `upstream/` record the exact source provenance.
 
 ## Binary Wheel Platforms
 

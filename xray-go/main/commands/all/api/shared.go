@@ -38,20 +38,6 @@ func setSharedFlags(cmd *base.Command) {
 	cmd.Flag.BoolVar(&apiJSON, "json", false, "")
 }
 
-func dialAPIServerTarget(serverAddr string, timeout int) (conn *grpc.ClientConn, ctx context.Context, close func()) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-	conn, err := grpc.DialContext(ctx, serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	if err != nil {
-		cancel()
-		return nil, nil, nil
-	}
-	close = func() {
-		cancel()
-		conn.Close()
-	}
-	return
-}
-
 func dialAPIServer() (conn *grpc.ClientConn, ctx context.Context, close func()) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(apiTimeout)*time.Second)
 	conn, err := grpc.DialContext(ctx, apiServerAddrPtr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
@@ -120,17 +106,6 @@ func fetchHTTPContent(target string) ([]byte, error) {
 	}
 
 	return content, nil
-}
-
-func getJSONResponse(m proto.Message) string {
-	if isNil(m) {
-		return "Failed to get proto"
-	}
-	if j, ok := creflect.MarshalToJson(m, true); ok {
-		return j
-	} else {
-		return "Failed to encode proto"
-	}
 }
 
 func showJSONResponse(m proto.Message) {

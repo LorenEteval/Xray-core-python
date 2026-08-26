@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "vendor_directory": "xray-go",
+  "binding_owned_files": [
+    "binding/binding.go",
+    "binding/binding_test.go",
+    "main/binding_export.go"
+  ],
+  "patches": []
+}

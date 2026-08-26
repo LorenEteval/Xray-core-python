@@ -34,13 +34,10 @@ type ConfigBuilder func(files []*ConfigSource) (*Config, error)
 // ConfigsMerger merges multiple json configs into a single one
 type ConfigsMerger func(files []*ConfigSource) (string, error)
 
-type ConfigBuilderJson func(jsonStrings string) (*Config, error)
-
 var (
 	configLoaderByName    = make(map[string]*ConfigFormat)
 	configLoaderByExt     = make(map[string]*ConfigFormat)
 	ConfigBuilderForFiles ConfigBuilder
-	ConfigBuilderForJson  ConfigBuilderJson
 	ConfigMergedFormFiles ConfigsMerger
 )
 

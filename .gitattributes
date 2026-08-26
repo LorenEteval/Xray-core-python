@@ -1,0 +1,3 @@
+# Preserve vendored upstream bytes exactly on every checkout. The upstream
+# integrity manifest hashes these files without line-ending conversion.
+xray-go/** -text

@@ -1,13 +1,62 @@
 name: Deploy PyPI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
+    inputs:
+      checkout_ref:
+        description: Exact synchronization commit to build
+        required: false
+        type: string
+        default: ""
+      release_tag:
+        description: Downstream tag to create and publish
+        required: false
+        type: string
+        default: ""
+      upstream_tag:
+        description: Exact corresponding Xray-core release tag
+        required: false
+        type: string
+        default: ""
+      upstream_prerelease:
+        description: Whether the corresponding upstream release is a prerelease
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
+  verify-source:
+    name: Verify source ownership and synchronization tooling
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: xray-go/go.mod
+          check-latest: true
+          cache-dependency-path: xray-go/go.sum
+      - name: Verify vendored source and unit tests
+        run: |
+          python scripts/sync_xray_core.py verify
+          python -m unittest discover -s tests
+          cd xray-go
+          go test ./binding ./main
+
   build-wheels:
     name: Build wheels (${{ matrix.name }})
+    needs: verify-source
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,6 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
           persist-credentials: false
 
       # Linux builds run in manylinux containers, so Go is installed by
@@ -41,7 +91,7 @@ jobs:
       - uses: actions/setup-go@v7
         if: runner.os != 'Linux'
         with:
-          go-version: "1.26"
+          go-version-file: xray-go/go.mod
           check-latest: true
           cache-dependency-path: xray-go/go.sum
 
@@ -115,10 +165,12 @@ jobs:
 
   build-sdist:
     name: Build source distribution
+    needs: verify-source
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -161,11 +213,68 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
-  publish-to-pypi:
-    name: Publish Python distributions to PyPI
-    if: startsWith(github.ref, 'refs/tags/')
+  guard-release:
+    name: Guard automated release state
+    if: inputs.release_tag != ''
     needs:
       - collect-distributions
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.checkout_ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check Git, GitHub, and PyPI state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_UPSTREAM_PRERELEASE: ${{ inputs.upstream_prerelease }}
+        run: |
+          if [[ "$(<UPSTREAM_PRERELEASE)" != "$REQUESTED_UPSTREAM_PRERELEASE" ]]; then
+            echo "Reusable workflow prerelease input disagrees with provenance" >&2
+            exit 1
+          fi
+          python scripts/sync_xray_core.py guard-release \
+            --downstream-tag '${{ inputs.release_tag }}' \
+            --upstream-tag '${{ inputs.upstream_tag }}'
+
+  create-tag:
+    name: Create downstream release tag
+    if: inputs.release_tag != ''
+    needs:
+      - guard-release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.checkout_ref }}
+          fetch-depth: 0
+      - name: Create and push annotated tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          UPSTREAM_TAG: ${{ inputs.upstream_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$RELEASE_TAG" --message "Corresponds to Xray-core $UPSTREAM_TAG"
+          git push origin "$RELEASE_TAG"
+
+  publish-to-pypi:
+    name: Publish Python distributions to PyPI
+    if: >-
+      always() &&
+      needs.collect-distributions.result == 'success' &&
+      (needs.guard-release.result == 'success' || needs.guard-release.result == 'skipped') &&
+      (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped') &&
+      (startsWith(github.ref, 'refs/tags/') || inputs.release_tag != '')
+    needs:
+      - collect-distributions
+      - guard-release
+      - create-tag
     runs-on: ubuntu-24.04
     environment:
       name: deploy-pypi
@@ -183,30 +292,46 @@ jobs:
 
   github-release:
     name: Upload distributions to GitHub Release
-    if: startsWith(github.ref, 'refs/tags/')
+    if: >-
+      startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
     needs:
       - publish-to-pypi
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          persist-credentials: false
       - name: Download all distributions
         uses: actions/download-artifact@v8
         with:
           name: python-package-distributions
           path: dist
+      - name: Generate release notes
+        run: >-
+          python scripts/sync_xray_core.py release-notes
+          --output release-notes.md
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create
-          '${{ github.ref_name }}'
-          --repo '${{ github.repository }}'
-          --notes ""
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          prerelease_flag=""
+          if [[ "$(<UPSTREAM_PRERELEASE)" == "true" ]]; then
+            prerelease_flag="--prerelease"
+          fi
+          gh release create "$RELEASE_TAG" \
+            --repo '${{ github.repository }}' \
+            --verify-tag \
+            --notes-file release-notes.md \
+            $prerelease_flag
       - name: Upload distributions to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: >-
           gh release upload
-          '${{ github.ref_name }}' dist/*
+          "$RELEASE_TAG" dist/*
           --repo '${{ github.repository }}'

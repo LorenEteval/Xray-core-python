@@ -1,0 +1,98 @@
+name: Synchronize Xray-core upstream
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+    inputs:
+      upstream_tag:
+        description: Optional exact Xray-core GitHub Release tag
+        required: false
+        type: string
+
+concurrency:
+  group: sync-xray-core-upstream
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  synchronize:
+    name: Synchronize exact upstream release
+    runs-on: ubuntu-24.04
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+      commit: ${{ steps.commit.outputs.commit }}
+      downstream_version: ${{ steps.sync.outputs.downstream_version }}
+      release_tag: ${{ steps.sync.outputs.release_tag }}
+      upstream_commit: ${{ steps.sync.outputs.upstream_commit }}
+      upstream_prerelease: ${{ steps.sync.outputs.upstream_prerelease }}
+      upstream_tag: ${{ steps.sync.outputs.upstream_tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: xray-go/go.mod
+          check-latest: true
+          cache-dependency-path: xray-go/go.sum
+      - name: Verify and synchronize upstream
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_UPSTREAM_TAG: ${{ inputs.upstream_tag }}
+        run: |
+          python scripts/sync_xray_core.py verify
+          args=(sync --github-output)
+          if [[ -n "$REQUESTED_UPSTREAM_TAG" ]]; then
+            args+=(--tag "$REQUESTED_UPSTREAM_TAG")
+          fi
+          python scripts/sync_xray_core.py "${args[@]}"
+      - name: Validate synchronized source
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          python scripts/sync_xray_core.py verify
+          python -m unittest discover -s tests
+          cd xray-go
+          go test ./binding ./main
+      - name: Commit and push synchronization
+        id: commit
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.sync.outputs.release_tag }}
+          UPSTREAM_TAG: ${{ steps.sync.outputs.upstream_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git diff --cached --quiet && {
+            echo "Synchronization reported changes but produced no diff" >&2
+            exit 1
+          }
+          git commit --signoff \
+            --message "Sync Xray-core to $UPSTREAM_TAG" \
+            --message "Prepare Xray-core-python $RELEASE_TAG"
+          git push origin HEAD:main
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Build and publish synchronized release
+    needs: synchronize
+    if: needs.synchronize.outputs.changed == 'true'
+    uses: ./.github/workflows/deploy-pypi.yml
+    permissions:
+      contents: write
+      id-token: write
+    with:
+      checkout_ref: ${{ needs.synchronize.outputs.commit }}
+      release_tag: ${{ needs.synchronize.outputs.release_tag }}
+      upstream_tag: ${{ needs.synchronize.outputs.upstream_tag }}
+      upstream_prerelease: ${{ needs.synchronize.outputs.upstream_prerelease == 'true' }}
+    secrets: inherit

@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(xray C CXX)
 
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION" XRAY_CORE_PYTHON_VERSION LIMIT_COUNT 1)
+if (NOT XRAY_CORE_PYTHON_VERSION)
+    message(FATAL_ERROR "VERSION is empty")
+endif ()
+
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -23,6 +28,10 @@ if (NOT XRAY_CORE_INCLUDE_DIR)
 endif ()
 
 pybind11_add_module(${PROJECT_NAME} src/xray.cpp)
+target_compile_definitions(
+    ${PROJECT_NAME} PRIVATE
+    XRAY_CORE_PYTHON_VERSION="${XRAY_CORE_PYTHON_VERSION}"
+)
 
 if (WIN32)
     if (MINGW)
