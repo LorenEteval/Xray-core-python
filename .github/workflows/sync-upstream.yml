@@ -38,11 +38,6 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: xray-go/go.mod
-          check-latest: true
-          cache-dependency-path: xray-go/go.sum
       - name: Verify and synchronize upstream
         id: sync
         env:
@@ -55,6 +50,14 @@ jobs:
             args+=(--tag "$REQUESTED_UPSTREAM_TAG")
           fi
           python scripts/sync_xray_core.py "${args[@]}"
+      # Synchronization replaces xray-go/go.mod. Set up Go afterwards so the
+      # selected toolchain follows the exact requirement of the upstream release.
+      - uses: actions/setup-go@v7
+        if: steps.sync.outputs.changed == 'true'
+        with:
+          go-version-file: xray-go/go.mod
+          check-latest: true
+          cache-dependency-path: xray-go/go.sum
       - name: Validate synchronized source
         if: steps.sync.outputs.changed == 'true'
         run: |

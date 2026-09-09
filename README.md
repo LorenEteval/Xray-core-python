@@ -20,7 +20,7 @@ Binary wheels are published for Linux x86-64 and ARM64, Windows x86-64 and ARM64
 A source distribution is also published as a fallback. If pip cannot find a compatible wheel, it may build the native
 binding from source. A source build requires:
 
-* [Go 1.26 or newer](https://go.dev/doc/install) in `PATH`.
+* A [Go toolchain](https://go.dev/doc/install) compatible with the version declared in `xray-go/go.mod`, in `PATH`.
 * A working C and C++ compiler toolchain.
 * MinGW-w64 on Windows x86-64, or LLVM-MinGW on Windows ARM64, with `gcc` and `g++` available in `PATH`.
 
