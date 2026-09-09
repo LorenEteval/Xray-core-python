@@ -1,5 +1,4 @@
 {
-  "schema": 1,
   "releases": [
     {
       "downstream_version": "1.8.26.10",
@@ -7,6 +6,14 @@
       "upstream_prerelease": true,
       "upstream_published_at": "2026-07-28T08:00:45Z",
       "upstream_tag": "v26.7.28"
+    },
+    {
+      "downstream_version": "1.8.26.11",
+      "upstream_commit": "52a412d9e2f5c2a5142b1b4e2ab3771dacb8b120",
+      "upstream_prerelease": true,
+      "upstream_published_at": "2026-09-08T22:28:10Z",
+      "upstream_tag": "v26.9.9"
     }
-  ]
+  ],
+  "schema": 1
 }

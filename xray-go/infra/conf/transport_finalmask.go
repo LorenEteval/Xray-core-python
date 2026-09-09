@@ -14,6 +14,7 @@ import (
 	googleuuid "github.com/google/uuid"
 	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/transport/internet"
 	"github.com/xtls/xray-core/transport/internet/finalmask/fragment"
 	"github.com/xtls/xray-core/transport/internet/finalmask/header/custom"
 	"github.com/xtls/xray-core/transport/internet/finalmask/mkcp/aes128gcm"
@@ -23,6 +24,7 @@ import (
 	"github.com/xtls/xray-core/transport/internet/finalmask/realm"
 	"github.com/xtls/xray-core/transport/internet/finalmask/salamander"
 	"github.com/xtls/xray-core/transport/internet/finalmask/sudoku"
+	"github.com/xtls/xray-core/transport/internet/finalmask/udphop"
 	"github.com/xtls/xray-core/transport/internet/finalmask/xdns"
 	"github.com/xtls/xray-core/transport/internet/finalmask/xicmp"
 	"github.com/xtls/xray-core/transport/internet/finalmask/xmc"
@@ -83,6 +85,7 @@ var (
 		"xdns":          func() interface{} { return new(Xdns) },
 		"xicmp":         func() interface{} { return new(Xicmp) },
 		"realm":         func() interface{} { return new(Realm) },
+		"udphop":        func() interface{} { return new(UDPHop) },
 	}, "type", "settings")
 )
 
@@ -816,9 +819,11 @@ func (c *Xicmp) Build() (proto.Message, error) {
 }
 
 type Realm struct {
-	Url         string     `json:"url"`
-	StunServers []string   `json:"stunServers"`
-	TlsConfig   *TLSConfig `json:"tlsConfig"`
+	Url         string             `json:"url"`
+	StunServers []string           `json:"stunServers"`
+	TlsConfig   *TLSConfig         `json:"tlsConfig"`
+	IPMode      string             `json:"ipMode"`
+	PortMapping *realm.PortMapping `json:"portMapping"`
 }
 
 func (c *Realm) Build() (proto.Message, error) {
@@ -898,6 +903,64 @@ func (c *Realm) Build() (proto.Message, error) {
 		ID:          id,
 		StunServers: stunServers,
 		TlsConfig:   tlsConfig,
+		IPMode:      strings.ToLower(c.IPMode),
+		PortMapping: c.PortMapping,
+	}, nil
+}
+
+type UDPHop struct {
+	Sockopt     *SocketConfig `json:"sockopt"`
+	Mode        string        `json:"mode"`
+	Interval    Int32Range    `json:"interval"`
+	RemotePorts PortList      `json:"remotePorts"`
+	RemoteIPs   []string      `json:"remoteIPs"`
+}
+
+func (c *UDPHop) Build() (proto.Message, error) {
+	var sockopt *internet.SocketConfig
+	if c.Sockopt != nil {
+		var err error
+		sockopt, err = c.Sockopt.Build()
+		if err != nil {
+			return nil, err
+		}
+	}
+	var local, remote, remoteOnce bool
+	for _, mode := range strings.Split(c.Mode, ",") {
+		switch strings.ToLower(mode) {
+		case "intervallocal":
+			local = true
+		case "intervalremote":
+			remote = true
+		case "perconnremote":
+			remoteOnce = true
+		default:
+			return nil, errors.New("invalid mode ", mode)
+		}
+	}
+	var remoteIPs []string
+	for _, ip := range c.RemoteIPs {
+		prefix, err := netip.ParsePrefix(ip)
+		if err == nil {
+			remoteIPs = append(remoteIPs, prefix.String())
+			continue
+		}
+		addr, err := netip.ParseAddr(ip)
+		if err == nil {
+			remoteIPs = append(remoteIPs, netip.PrefixFrom(addr, addr.BitLen()).String())
+			continue
+		}
+		return nil, errors.New("invalid ip ", ip)
+	}
+	return &udphop.Config{
+		Sockopt:     sockopt,
+		Local:       local,
+		Remote:      remote,
+		RemoteOnce:  remoteOnce,
+		IntervalMin: int64(c.Interval.From),
+		IntervalMax: int64(c.Interval.To),
+		RemotePorts: c.RemotePorts.Build().Ports(),
+		RemoteIPs:   remoteIPs,
 	}, nil
 }
 
@@ -928,20 +991,23 @@ func (c *Mask) Build(tcp bool) (proto.Message, error) {
 }
 
 type QuicParamsConfig struct {
-	Congestion                  string    `json:"congestion"`
-	Debug                       bool      `json:"debug"`
-	BbrProfile                  string    `json:"bbrProfile"`
-	BrutalUp                    Bandwidth `json:"brutalUp"`
-	BrutalDown                  Bandwidth `json:"brutalDown"`
-	UdpHop                      UdpHop    `json:"udpHop"`
-	InitStreamReceiveWindow     uint64    `json:"initStreamReceiveWindow"`
-	MaxStreamReceiveWindow      uint64    `json:"maxStreamReceiveWindow"`
-	InitConnectionReceiveWindow uint64    `json:"initConnectionReceiveWindow"`
-	MaxConnectionReceiveWindow  uint64    `json:"maxConnectionReceiveWindow"`
-	MaxIdleTimeout              int64     `json:"maxIdleTimeout"`
-	KeepAlivePeriod             int64     `json:"keepAlivePeriod"`
-	DisablePathMTUDiscovery     bool      `json:"disablePathMTUDiscovery"`
-	MaxIncomingStreams          int64     `json:"maxIncomingStreams"`
+	Congestion                    string    `json:"congestion"`
+	Debug                         bool      `json:"debug"`
+	BbrProfile                    string    `json:"bbrProfile"`
+	BrutalUp                      Bandwidth `json:"brutalUp"`
+	BrutalDown                    Bandwidth `json:"brutalDown"`
+	BrutalDisableLossCompensation bool      `json:"brutalDisableLossCompensation"`
+	InitStreamReceiveWindow       uint64    `json:"initStreamReceiveWindow"`
+	MaxStreamReceiveWindow        uint64    `json:"maxStreamReceiveWindow"`
+	InitConnectionReceiveWindow   uint64    `json:"initConnectionReceiveWindow"`
+	MaxConnectionReceiveWindow    uint64    `json:"maxConnectionReceiveWindow"`
+	MaxIdleTimeout                int64     `json:"maxIdleTimeout"`
+	KeepAlivePeriod               int64     `json:"keepAlivePeriod"`
+	DisablePathMTUDiscovery       bool      `json:"disablePathMTUDiscovery"`
+	DisableChromeParrot           bool      `json:"disableChromeParrot"`
+	DisableGSO                    bool      `json:"disableGSO"`
+	MaxIncomingStreams            int64     `json:"maxIncomingStreams"`
+	DisableStatelessReset         bool      `json:"disableStatelessReset"`
 }
 
 type FinalMask struct {

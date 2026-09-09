@@ -41,7 +41,7 @@
       "type": "file"
     },
     ".github/workflows/docker.yml": {
-      "sha256": "dd67cc9199f736aac6fbc1f9fd19381bc0451fb4bae3b262a68deacd058ec428",
+      "sha256": "317e8c1b84ce4dc4b248179b319ddc24e078105c4a837ac260f4c2e910d5c0fd",
       "type": "file"
     },
     ".github/workflows/release-win7.yml": {
@@ -57,7 +57,7 @@
       "type": "file"
     },
     ".github/workflows/test.yml": {
-      "sha256": "018e990691a6abcb1389212fb6c9286271c7b7c8c128f371a10a246c60f1e30f",
+      "sha256": "6cbfdf7711e306809e84a5ec65fc1277fafc3fdfa4797cbc3cbc47074b25a13a",
       "type": "file"
     },
     ".gitignore": {
@@ -385,7 +385,7 @@
       "type": "file"
     },
     "app/observatory/observer.go": {
-      "sha256": "64a414fe7c15bd0d357d28d8aa713848e3154b7d04c17d8cf9667d393c932210",
+      "sha256": "13695e0edc373d198afe7b423b83ae7f19b9cad666856be4d3cf647040a2f434",
       "type": "file"
     },
     "app/observatory/observer_test.go": {
@@ -441,11 +441,11 @@
       "type": "file"
     },
     "app/proxyman/config.pb.go": {
-      "sha256": "2e3dcd7e37b2e2aa8034f78e08b77db5cf34b2dac78d6bdaed4e5d0c9a6fc279",
+      "sha256": "93c758c619028f925a76151b04d3d42ceea48a62f6ab980be9b9806287646cdc",
       "type": "file"
     },
     "app/proxyman/config.proto": {
-      "sha256": "fb1a0566f22e63a4b9650c05406dc0a866d71dfb6919e547515f1ce4821865b1",
+      "sha256": "7c92684bf96e40ba808428f8ca8c54507a955960469919c650f9032d34733e8c",
       "type": "file"
     },
     "app/proxyman/inbound/always.go": {
@@ -461,7 +461,7 @@
       "type": "file"
     },
     "app/proxyman/outbound/handler.go": {
-      "sha256": "9683cbb036adbb72727f52e0d760f00818f0ede84ccc44d308cbc254f7871e07",
+      "sha256": "8d0395e60318af2083d6aaff424b8dd9c8cabe3376937b261658f354cc4cad8f",
       "type": "file"
     },
     "app/proxyman/outbound/handler_test.go": {
@@ -501,11 +501,11 @@
       "type": "file"
     },
     "app/router/balancing.go": {
-      "sha256": "a616692a77e868e63e03a076d62a56b9c4f7e44a29c3b664605a52c018d4d05a",
+      "sha256": "9bdd54d6f831b99e12238de591c880fb92c5f9ba3675fabd93e6e2fc544f014d",
       "type": "file"
     },
     "app/router/balancing_override.go": {
-      "sha256": "61d81d2ef8e35ee8ce661ada4a76b07c5dd28a1b1f4b98287ee2bb4774c959b6",
+      "sha256": "8d926826894547b3cb4ede859a8cd9c62633be8554361a2a1be6c9ae8949c097",
       "type": "file"
     },
     "app/router/command/command.go": {
@@ -533,27 +533,27 @@
       "type": "file"
     },
     "app/router/condition.go": {
-      "sha256": "cca79388fb04e3bc86ada61519e18cc470509a39206bdf768fa53c4676d2dba7",
+      "sha256": "25c2542b2eb6b1ece1a44f6d7a783e2e0de8b9620d39ef5ea3d57c2b8ddcf619",
       "type": "file"
     },
     "app/router/condition_test.go": {
-      "sha256": "7e691bcc6ab7b96559bba8b4f31ce1290eb436e0bcca738d501b2e0512c07e5d",
+      "sha256": "b21240d19aaf97942167bf9560dc2feadf964a932786eaf90e10ae659b3a7132",
       "type": "file"
     },
     "app/router/config.go": {
-      "sha256": "42d93e8e0d1067a3a4e0f37ca47c659e44beed67e740b6cbc1cdeda45db9d116",
+      "sha256": "ae38cba281d0c1fdb2ccd2d9abad0ec52e2362435fae96a25aa6f5385cf20e0b",
       "type": "file"
     },
     "app/router/config.pb.go": {
-      "sha256": "89c82cb9cd16aea18b32f9777fbfbfd15ad8dd008b16d079b222cceaef5c8a56",
+      "sha256": "e91af109f7f3df134be5c89f8aac93bac15f644098b54e75c5ddc55bb25bb5f6",
       "type": "file"
     },
     "app/router/config.proto": {
-      "sha256": "2c895aa61e3dcb63a6db96ddde218f7c8a0d108610f5b3288f012a28b030b26a",
+      "sha256": "97ad0579cf0385b46b258512b144396cb6d730cd1127a8bb9a847e1da79d6fa9",
       "type": "file"
     },
     "app/router/router.go": {
-      "sha256": "bf00ddac47496bd41e8999755e9b0632229c839c5fc5392bb2f2ea119278e552",
+      "sha256": "fdbdaffa9369e01645be395b800c1655eb210bcb2719a01d5980b4c319b121ca",
       "type": "file"
     },
     "app/router/router_test.go": {
@@ -577,7 +577,7 @@
       "type": "file"
     },
     "app/router/webhook.go": {
-      "sha256": "aa700d34dfd5157572b32b5efb2881bd2d0a8cd270124c7734ff4d2d26f97c08",
+      "sha256": "eb008756a485471f3c64572537c1988eed9709b62cb6865b0b3606f27255d799",
       "type": "file"
     },
     "app/router/weight.go": {
@@ -749,7 +749,7 @@
       "type": "file"
     },
     "common/buf/writer.go": {
-      "sha256": "9316522a507d23bd9ab58db14e87a8a86c25137136b0c0b76d36245756c3abda",
+      "sha256": "c4bbc5d026ade18877a89d9c7dcc7f28e7ce9a025df3b847686388e702c39b5c",
       "type": "file"
     },
     "common/buf/writer_test.go": {
@@ -813,7 +813,7 @@
       "type": "file"
     },
     "common/crypto/crypto.go": {
-      "sha256": "8527b325ca0694dae9728db7a82aaa1fcbb6718901b4cbb4d2d4a01a251d9de2",
+      "sha256": "de549d57f8bc451079cc32f98f1d9bde1fff7e41a86e94b490afeb41f4bac5f2",
       "type": "file"
     },
     "common/crypto/internal/chacha.go": {
@@ -1169,7 +1169,7 @@
       "type": "file"
     },
     "common/net/find_process_darwin.go": {
-      "sha256": "5f6a7b747ebd0e553c8bb656fffe1294c3f67e69d5f0f54b4dfaafbfa80d6e3c",
+      "sha256": "e3ecfad4f2f65cc42d736802fefdec65d2eb21ef5a42445d7910eac9ec692987",
       "type": "file"
     },
     "common/net/find_process_darwin.s": {
@@ -1177,7 +1177,7 @@
       "type": "file"
     },
     "common/net/find_process_darwin_test.go": {
-      "sha256": "f7f936e874401b574c657acd26d7bb547cdcb36ad2c5e054f00da17e4cc22869",
+      "sha256": "5c7fcb20dd507b7d827945815d8fd1b49a83d029bcf751167332aac033c897db",
       "type": "file"
     },
     "common/net/find_process_ios.go": {
@@ -1285,7 +1285,11 @@
       "type": "file"
     },
     "common/protocol/bittorrent/bittorrent.go": {
-      "sha256": "4b5fa7451ec1d77ff83a12e8d1c5dc0c6c46f0f3c4fbd5645219fd10756736aa",
+      "sha256": "edd0c7fd01679f9652279dfa443c48e76883f7072e4b9e50bf59921217f03f85",
+      "type": "file"
+    },
+    "common/protocol/bittorrent/bittorrent_test.go": {
+      "sha256": "fd382f2c636e147d60864f90e3a127c3674efdc361ac90533dc00fe5c852a193",
       "type": "file"
     },
     "common/protocol/context.go": {
@@ -1341,15 +1345,15 @@
       "type": "file"
     },
     "common/protocol/quic/qtls_go118.go": {
-      "sha256": "26f926dcf39a85ffdfe92a06f39b5ca88645a3ca68fd7368e2ee075393e1bb31",
+      "sha256": "c47c0ebe6a891b65878427da9e51ca159dc8cf8cfca1bf084c1815b858d98e37",
       "type": "file"
     },
     "common/protocol/quic/sniff.go": {
-      "sha256": "d77286323e23405ad105e508bb326db9381579a8eccb853bc8356629b44d3c58",
+      "sha256": "a031e02be91e9be15a59eee2ae170fdf8bcdb1b393332c5f6214c13e2ff13bb5",
       "type": "file"
     },
     "common/protocol/quic/sniff_test.go": {
-      "sha256": "2dabc341d1c46577840a4828400bf780aa1f7285cb785baa139025d982e609d9",
+      "sha256": "798a284d94d637b37cc759a85da2a2ce12d5357a9710f780f93abe9e56c76c0a",
       "type": "file"
     },
     "common/protocol/server_spec.go": {
@@ -1417,7 +1421,7 @@
       "type": "file"
     },
     "common/reflect/marshal_test.go": {
-      "sha256": "06eb0b6d3c147c4708ee7a4a55bb4d88dfbd63f07bd1fe9d003b5649c453e734",
+      "sha256": "434c70037327fbd50702b34ce30de9101716d665ce1745167d1fcc3c2eacf057",
       "type": "file"
     },
     "common/retry/retry.go": {
@@ -1465,7 +1469,7 @@
       "type": "file"
     },
     "common/session/session.go": {
-      "sha256": "0fb92d116a6d8e00c9f735bda4f1e6acf294f26d11d86496ff4d0d6c3b94f458",
+      "sha256": "f40f2b767d652117804dc1426eadf0af85af3a16ec8772e458cf9312e4fa740c",
       "type": "file"
     },
     "common/signal/done/done.go": {
@@ -1645,7 +1649,7 @@
       "type": "file"
     },
     "core/core.go": {
-      "sha256": "87d2fba513519327b107e04e9d79110ee5e53ac3c0daf54788b7145ca78c9b6e",
+      "sha256": "bd82bca5ca984bccdf5449d34d68bcfae0225822d7d8326bb4a8ddcb69d516fc",
       "type": "file"
     },
     "core/format.go": {
@@ -1745,11 +1749,11 @@
       "type": "file"
     },
     "go.mod": {
-      "sha256": "3563a7831c81e160549561f54d1fa81aad20b915ebf39bf2164cd93866c21695",
+      "sha256": "a2dc99c9072e1098134a09e4af652ab5e8cf0c949384dea6919c5599131dbb34",
       "type": "file"
     },
     "go.sum": {
-      "sha256": "33d275a3eae8ea3af29807f45836c1781bceae8bc7c7a88816fcb34b54995351",
+      "sha256": "4ab9844613ba95c0d1a41562b6ca5f78d8674dba82930805e8bf72de9ace3aa0",
       "type": "file"
     },
     "infra/conf/api.go": {
@@ -1757,11 +1761,11 @@
       "type": "file"
     },
     "infra/conf/blackhole.go": {
-      "sha256": "187ddf41ba32d64c09a73200ef77a8786849cc8da093191c19fcd5d9c4376e16",
+      "sha256": "11bab408fa98826bcb2dd0aef1b7e597616a3251b4b37407473b8f7695d23180",
       "type": "file"
     },
     "infra/conf/blackhole_test.go": {
-      "sha256": "bce9d3e51d721a1fec902fd90e2eb6ccc21c349981c2807673ce9cdfc26b37d6",
+      "sha256": "6ce245eba305e629f57b22afc1376f8e170537932c14b69f1a04133a0d0d6f83",
       "type": "file"
     },
     "infra/conf/buildable.go": {
@@ -1777,7 +1781,7 @@
       "type": "file"
     },
     "infra/conf/common.go": {
-      "sha256": "b73ed5742c2016664f0e909fe6dfc289cf50678b2faf8daacd6bd86af8750dc8",
+      "sha256": "74ac5deea7f399d9691895fbfd34673230a70e0962b741b56d4366d612aed78a",
       "type": "file"
     },
     "infra/conf/common_test.go": {
@@ -1885,7 +1889,7 @@
       "type": "file"
     },
     "infra/conf/observatory.go": {
-      "sha256": "a7cccb040a14b224c769e4d51e0f82da1f36b86ce8de0f3f1d0452bf2e2a5ba7",
+      "sha256": "995d61068bded0d9f3cc1352a5daae2ce85dc5bcef77e0102ae49293416e46e1",
       "type": "file"
     },
     "infra/conf/policy.go": {
@@ -1905,11 +1909,11 @@
       "type": "file"
     },
     "infra/conf/router.go": {
-      "sha256": "2d14f71b28799ad439c5d3a7d20f128a5d23b3a1dd0728c1b4ab27a8045e22c0",
+      "sha256": "fa7b2c2a05ce632fdaa77bcc2daa8be3327768f38773b7bc13d6fe47ce2f9a33",
       "type": "file"
     },
     "infra/conf/router_strategy.go": {
-      "sha256": "0bd489ef3b6df5d8de958f2bf2a7f5f091219881ce54bbed109637e6f997ea21",
+      "sha256": "e9354d6a2ad7d7d1d548009c8d50a286fdbdb462fd6979a673897ddcb632decc",
       "type": "file"
     },
     "infra/conf/router_test.go": {
@@ -1949,7 +1953,7 @@
       "type": "file"
     },
     "infra/conf/transport_finalmask.go": {
-      "sha256": "2d82e2cea9e6c621933590ff27b094cfc9d01571fb5b214db9fb2600b287e335",
+      "sha256": "fae0a7d530a40ebeddf99a0304f060cdbe82c4fd7e4a53c56470b0504769fd22",
       "type": "file"
     },
     "infra/conf/transport_finalmask_xmc_test.go": {
@@ -1957,19 +1961,19 @@
       "type": "file"
     },
     "infra/conf/transport_internet.go": {
-      "sha256": "b2f0b2285c794cdae97b1b508eccbe604321d4ea00c05e04cda35645c0ef56d1",
+      "sha256": "ad3004b332388dc69ee3d597f77872175435887097e95d296614b615318952c6",
       "type": "file"
     },
     "infra/conf/transport_method.go": {
-      "sha256": "445929fb3cd1c8c3bc788e89be5934c0d1d870764c2084f86c898b35becdb446",
+      "sha256": "f84e8b081c9369680cb3f3342fb5fcdbf8c29e52a8ae80ff071664565f93c11b",
       "type": "file"
     },
     "infra/conf/transport_security.go": {
-      "sha256": "9d2dc09f4428539fe42c96ba9630bff006e36e4600cbd1ea468497f22b5f7e1e",
+      "sha256": "17a2f2ef4fab719094911e9da395e949e0fed5a3ccd839165b7bb085b868db3c",
       "type": "file"
     },
     "infra/conf/transport_sockopt.go": {
-      "sha256": "d4c96630423b607c97659346a3af18d281458b4ae1ed3911fa7462be85367638",
+      "sha256": "9fba6eab1f52d0dac18c26b12f828a04762dfe44f08c123218da53faf45b32e3",
       "type": "file"
     },
     "infra/conf/transport_test.go": {
@@ -1989,7 +1993,7 @@
       "type": "file"
     },
     "infra/conf/vless.go": {
-      "sha256": "d976701c650274d9c569312fd154d29c7341e1b9be18ca1f7d064b2211a1f16f",
+      "sha256": "931e622cb00384016921fb825edd166f2753b9447113a0ed36c946e53e1b06d1",
       "type": "file"
     },
     "infra/conf/vless_test.go": {
@@ -2005,11 +2009,11 @@
       "type": "file"
     },
     "infra/conf/wireguard.go": {
-      "sha256": "860ff2f88199dcb3a39d20bca331ef255712aea6120fc1de6f2183316fb631e9",
+      "sha256": "b6d3ffb10746ac6e99c9a46d8282e7c151ff84ee92eca4d5f6bd56264b422a24",
       "type": "file"
     },
     "infra/conf/xray.go": {
-      "sha256": "b5d8ed2b63c7effe9ac7ceb5f512145edda8c5f2bf2fd0b3bc045fc430ad7b7c",
+      "sha256": "e77ef2bd16254eb523e69c33e25ffa5dea6a15c636e568b1242828a9dbe64da7",
       "type": "file"
     },
     "infra/conf/xray_test.go": {
@@ -2017,7 +2021,7 @@
       "type": "file"
     },
     "infra/vformat/main.go": {
-      "sha256": "605215fc5710122e6606bc2cf950468fc16553ecfbd7b22a88b4f60202c78a59",
+      "sha256": "6e48840087e5a3dbf844d570be05e5058b6da50cde6b76d784416660908a031a",
       "type": "file"
     },
     "infra/vprotogen/main.go": {
@@ -2253,27 +2257,23 @@
       "type": "file"
     },
     "proxy/blackhole/blackhole.go": {
-      "sha256": "f654964f9012274586b5e6b7d05d9f22277ffed29e2cb3a4ac354f78c5f7a4bc",
+      "sha256": "46e2439ad8891e5f55d483b2a63ab1751e6b6ad8f91c43f6ed0746cfba35ea59",
       "type": "file"
     },
     "proxy/blackhole/blackhole_test.go": {
-      "sha256": "89dfc048414f1cb2eec182110b6959c939d3a142b9575bf95bc51e79dc86df96",
-      "type": "file"
-    },
-    "proxy/blackhole/config.go": {
-      "sha256": "54e7743688ba9a4fbf82b329368567d312b7c2cddd2183a11576f1ab4988fd0c",
+      "sha256": "86bc95189d2e2a91924616a8e9abbe5645b237f7829ee31d436f800d4b50cce9",
       "type": "file"
     },
     "proxy/blackhole/config.pb.go": {
-      "sha256": "a1d52a4a3771ce9d56f15939c863886849924cc6a91636902af08764c6276c88",
+      "sha256": "fc60e797135d0c13197925db7085c91c2e3532a39213fc7f6c422fb7f5dc7ae7",
       "type": "file"
     },
     "proxy/blackhole/config.proto": {
-      "sha256": "dba4cd62c687aa9df90500d8c11f2d860fa32ccecdede5b16549686b0f668071",
+      "sha256": "f603128ce3a8e9e8a1e8d30cfdbf5b494df70547b72b8e5ef36cd5e69e7fec90",
       "type": "file"
     },
     "proxy/blackhole/config_test.go": {
-      "sha256": "638670af045931721ba0391c8d2f41f7203b5a4d7b88a703f5343d8e85fecc36",
+      "sha256": "c933040304f105902508f17ceaf84ba2b39d09bf5162e646dd3cc83d2d6e0f2c",
       "type": "file"
     },
     "proxy/dns/config.pb.go": {
@@ -2312,8 +2312,12 @@
       "sha256": "c94c09917d14d84c6972d95a12f2ddd61d10f87e79a336faa55e55d0073366f7",
       "type": "file"
     },
+    "proxy/dokodemo/fakeudp_openbsd.go": {
+      "sha256": "58a7ffad2d5c7e305951184d36a09e2044f9468bd7a808a76c29e5eeb0844bc5",
+      "type": "file"
+    },
     "proxy/dokodemo/fakeudp_other.go": {
-      "sha256": "d649b19fe7c6e61be51c9e9fe935f3fffd98314542b6d9b74821d048403f2d9a",
+      "sha256": "d7d68feacad7589665c79909c7dd0f52e9dc614db73711cab0b22f3affc23cd5",
       "type": "file"
     },
     "proxy/freedom/config.pb.go": {
@@ -2325,11 +2329,11 @@
       "type": "file"
     },
     "proxy/freedom/freedom.go": {
-      "sha256": "7284ae9a3e410d9447c3ac49f85afc919578777b08a63de7225bed236f14c9fc",
+      "sha256": "a80b7122d2f1bba893f8b099cb5f6348c682e7874b0a9f52a607beb82ed7fd26",
       "type": "file"
     },
     "proxy/http/client.go": {
-      "sha256": "ac5f33758144c37b0ff11da654af73d494b240007fc38f5b51bb4abd954cd6b3",
+      "sha256": "d64c6dbc2681ba37b38cb262cd6f27a44289fa140186d24bc8c4c570840b330c",
       "type": "file"
     },
     "proxy/http/config.go": {
@@ -2349,7 +2353,11 @@
       "type": "file"
     },
     "proxy/http/server.go": {
-      "sha256": "71d330091e256c166f608eff02fcffe317ca0de34d5145b2cbf058dddbfb1f54",
+      "sha256": "c50be613cc597e85ab0ad96318a30d8cef7b3892b515504ec37d69cebd26a2ed",
+      "type": "file"
+    },
+    "proxy/http/server_test.go": {
+      "sha256": "52c747ee334c16fbd23c8926d122c60959112432176011cb03d10d36a54919f1",
       "type": "file"
     },
     "proxy/hysteria/account/config.go": {
@@ -2473,7 +2481,7 @@
       "type": "file"
     },
     "proxy/shadowsocks_2022/outbound.go": {
-      "sha256": "1b0f884fe03d062bfba21f361723bb7bfefe998292cef0bb7ae73ca0ed58c7ee",
+      "sha256": "e3a1ba5f5166a2df81f5643df550044075ecab0f75da94229a71e016a2ba9623",
       "type": "file"
     },
     "proxy/shadowsocks_2022/shadowsocks_2022.go": {
@@ -2609,11 +2617,11 @@
       "type": "file"
     },
     "proxy/tun/tun_darwin.go": {
-      "sha256": "3c5c4da236534f76f43858eb7a3ab2260ca374b742ec9d9496ce85b47e105e22",
+      "sha256": "89553b16685f64ff56f2f3e14ad9de330c5ceef38aa92eeeee3dae0459ef3763",
       "type": "file"
     },
     "proxy/tun/tun_darwin_test.go": {
-      "sha256": "0eda254611a61fbebb523c1fc3e56b455f5637c8ede307354dcc04b0d908c203",
+      "sha256": "26d69b876e89f9e8078c566f184d102eac2ad046b4fbcc120ac21e07b42444de",
       "type": "file"
     },
     "proxy/tun/tun_default.go": {
@@ -2621,7 +2629,11 @@
       "type": "file"
     },
     "proxy/tun/tun_freebsd.go": {
-      "sha256": "3f2b5e888bad4316a424cf7595d52bcd2e20e17387ee37c7a8c24d1840be8516",
+      "sha256": "8d0b493e65604410eddff137057646a21a9c240c5ca5354719f3edb349b1ca1e",
+      "type": "file"
+    },
+    "proxy/tun/tun_freebsd_test.go": {
+      "sha256": "5f8a044898dc65884ee398d3651bba19bbe0e5559478e54b7bcc230147aeb293",
       "type": "file"
     },
     "proxy/tun/tun_linux.go": {
@@ -2629,7 +2641,7 @@
       "type": "file"
     },
     "proxy/tun/tun_windows.go": {
-      "sha256": "b732898ef5427f020890f7efa7e12d7f75005df68463824df3b4cc29c338de18",
+      "sha256": "6b933763563eb8be65e120693b3b9f44969491642e290288419d7720016fcc82",
       "type": "file"
     },
     "proxy/tun/udp_fullcone.go": {
@@ -2713,7 +2725,7 @@
       "type": "file"
     },
     "proxy/vless/outbound/outbound.go": {
-      "sha256": "da59f020b77e8c53f5815a5e55c48b921405f94ecd932d737ee8d69fc9624f1d",
+      "sha256": "c6d927ec0241f4270ca350a994dc4ac721ad248b45bb8d8fc568ab1fdff9b924",
       "type": "file"
     },
     "proxy/vless/validator.go": {
@@ -2837,7 +2849,7 @@
       "type": "file"
     },
     "proxy/wireguard/client.go": {
-      "sha256": "9d023ed03fe0055a5aef26a91f63b24570e8969038ed53e3a69b6156eb8cc670",
+      "sha256": "75dca59ba66b787e948d77c8a86a0a1bfd3651c472125e4b603088b08e6279b9",
       "type": "file"
     },
     "proxy/wireguard/config.go": {
@@ -2845,15 +2857,15 @@
       "type": "file"
     },
     "proxy/wireguard/config.pb.go": {
-      "sha256": "fd8a50fe3296f0062936109dfa482f0eb1b4d521c34260b40dd7ae99f3fce47a",
+      "sha256": "70f7bf12d9108fc73d6b06b442674d3dc4b41a3be9195061d07cc0a86fd82436",
       "type": "file"
     },
     "proxy/wireguard/config.proto": {
-      "sha256": "03a08add1e61b6172028073c00ddefa5055dfe46880099cf7acf40667857126c",
+      "sha256": "b36be03b0709cc7f4d24c9980220804c5ba1b96d1efb8264819dff9f3f271e54",
       "type": "file"
     },
     "proxy/wireguard/netstack.go": {
-      "sha256": "2d9e1e821f6af5c62224edf32a5f94da0caf1d8b5471abc0fcf83c50bf484d73",
+      "sha256": "4aa93316ef5e4f5a7c164b2ae531650b057c55da6d5addbbd0e2070e7de3ff58",
       "type": "file"
     },
     "proxy/wireguard/server.go": {
@@ -2925,7 +2937,7 @@
       "type": "file"
     },
     "testing/scenarios/dns_test.go": {
-      "sha256": "3542887e53426dc76756d3c42a7f39ea3705e6d1e0ee7627f53d1182d4a5d877",
+      "sha256": "c684e0fbe09740d2c18485010e360e594389542fe38820f6eaa714e834c56b97",
       "type": "file"
     },
     "testing/scenarios/dokodemo_test.go": {
@@ -2933,7 +2945,7 @@
       "type": "file"
     },
     "testing/scenarios/feature_test.go": {
-      "sha256": "0d9be2a305b830cdf7b449a0eff91326fcea67ccae03d86d771cbc8b676846a8",
+      "sha256": "1f70d657bde4483291cddb9684204b60a955ec0f2a2732a1a5e720ce11fea4c0",
       "type": "file"
     },
     "testing/scenarios/http_test.go": {
@@ -2977,7 +2989,7 @@
       "type": "file"
     },
     "testing/scenarios/vless_test.go": {
-      "sha256": "ef49120f4da9a5c1858c868ff77e55c853d1dd7ecb90e06eae27afc1dcf0b148",
+      "sha256": "af9de5d87f01020f9a74784ce55bcda25c13f949cb21a663fcaf3bf24089051e",
       "type": "file"
     },
     "testing/scenarios/vmess_test.go": {
@@ -3017,15 +3029,15 @@
       "type": "file"
     },
     "transport/internet/config.go": {
-      "sha256": "b2231dfade70bd0e7f49b42ac44d120730eca0c6537cecbd809219a8cbcbd10a",
+      "sha256": "593a6d53359e27bd60b69d6a06dea6f0853d684d983f16a0e9ec408c965babc8",
       "type": "file"
     },
     "transport/internet/config.pb.go": {
-      "sha256": "6f479d469863efb8fbf61198b09c137344d12bd38abba0ef4cabf2e7245670a4",
+      "sha256": "f0d8c578429688512b78383148e0d1351a0f60523869b85cb12825ea2514148d",
       "type": "file"
     },
     "transport/internet/config.proto": {
-      "sha256": "777748d6f6c8b6934597123cb1a4a31b2c1dcca0477981dcae61b805734d8a39",
+      "sha256": "aae8d7520e1214c78d823f2368e50f6b60048e4762df365ea927a9201deab9cc",
       "type": "file"
     },
     "transport/internet/dialer.go": {
@@ -3049,11 +3061,11 @@
       "type": "file"
     },
     "transport/internet/finalmask/finalmask.go": {
-      "sha256": "f017480f929c3c2c856c35cea423c99a0d0709ebb41293dc3caad82ff91f4fe5",
+      "sha256": "fb2f84af629c3f671f33b123d774a759536449522f932b76d2befa8402260f9d",
       "type": "file"
     },
     "transport/internet/finalmask/fragment/config.go": {
-      "sha256": "b4a6e77114186c32888bca362eef00ff3022ecc197beba2af7a093c113f6da0f",
+      "sha256": "ed08d4789ebebc0738db9136fb99e8a0d069f7dc31f099b02b30498c505acc5a",
       "type": "file"
     },
     "transport/internet/finalmask/fragment/config.pb.go": {
@@ -3069,7 +3081,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/header/custom/config.go": {
-      "sha256": "967f9a1fefde28ec97e1205bfe82c7620cd5e690c033f4138655ebd259283e85",
+      "sha256": "e9bd40eb8f6b22441fc5c27c2c6085d19e3a97c6e75bbbe306579182822b999b",
       "type": "file"
     },
     "transport/internet/finalmask/header/custom/config.pb.go": {
@@ -3117,7 +3129,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/mkcp/aes128gcm/config.go": {
-      "sha256": "4c2522d0f8bab3a0a28734f0988eed28df29cdaea97a5c981f8763448ce6aca2",
+      "sha256": "7d094746f98b473e227d9768b6ddce316fd4c5d42c2057d45e140ce193334439",
       "type": "file"
     },
     "transport/internet/finalmask/mkcp/aes128gcm/config.pb.go": {
@@ -3133,7 +3145,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/mkcp/header/config.go": {
-      "sha256": "3bdf9907c7ef3af077636c0882765e6706355248ccd234257e7ac3096c29826e",
+      "sha256": "016fade9977c3c3f1e1944b80ab0d34e63efbc97a07d04155877d0ee37a2d774",
       "type": "file"
     },
     "transport/internet/finalmask/mkcp/header/config.pb.go": {
@@ -3177,7 +3189,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/mkcp/original/config.go": {
-      "sha256": "a25b8510498fa1703a5565ebe71e17776452604790a961208fefec2c69279c59",
+      "sha256": "f608a888586451afdd4727c2db6fcde70db76693f7a80fb00593795f535c1e17",
       "type": "file"
     },
     "transport/internet/finalmask/mkcp/original/config.pb.go": {
@@ -3205,7 +3217,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/noise/config.go": {
-      "sha256": "2aa317aac9e5b60cfee14df69bb33ed4a6e9cacf0bbd243c1bfb08b1ae46245c",
+      "sha256": "3ff376fc92224af574fb6a5fb0bb8216ca871dba540d0ea172b707cb7856a358",
       "type": "file"
     },
     "transport/internet/finalmask/noise/config.pb.go": {
@@ -3221,23 +3233,27 @@
       "type": "file"
     },
     "transport/internet/finalmask/realm/client.go": {
-      "sha256": "2f1e1ed054a0c65fa54fc22dfbe97e7216ab8e64567fb403e82ee1cf4e8edeaf",
+      "sha256": "6ee5ea67d4ff5ddbb52b96e233de0b77e036d5950f9bead35faf117fec4ef5e3",
       "type": "file"
     },
     "transport/internet/finalmask/realm/config.go": {
-      "sha256": "67272f866eb6eb443be6c7365dc7944463f4c2d9ea71e9d01ba6acf70ba5c69d",
+      "sha256": "a5e87842821e0e15e6c3d057e49bb30b624c25d4a5652f767006dba4f28d698f",
       "type": "file"
     },
     "transport/internet/finalmask/realm/config.pb.go": {
-      "sha256": "eddc41f25928a4c60f32728b7631857f9c38caf7c7512725007f3a4d7e3cb21f",
+      "sha256": "fc495472f745fc6e877c784a64e16e4bfbcf4aed8e05d38e9ea2e7051dd12a72",
       "type": "file"
     },
     "transport/internet/finalmask/realm/config.proto": {
-      "sha256": "eafc257117c981a7bae91d4f109a35540ccb497c2a2898371d277e7cb46a19d1",
+      "sha256": "7a4e6108bfc190baa78b3d9a7e5a5feaf701fc981c81bf8089f47a3f76914fa0",
       "type": "file"
     },
     "transport/internet/finalmask/realm/http.go": {
       "sha256": "4008785da3123b1197ba9dd81796595e945fc054acd6e790047d37a40352ef69",
+      "type": "file"
+    },
+    "transport/internet/finalmask/realm/portmap.go": {
+      "sha256": "a735ef9b5cfdb40abb7930550685bee0511c8e498e2ad83d9da822454fcd5ba2",
       "type": "file"
     },
     "transport/internet/finalmask/realm/punch.go": {
@@ -3245,15 +3261,15 @@
       "type": "file"
     },
     "transport/internet/finalmask/realm/server.go": {
-      "sha256": "833a1941b6d3c6d76b040673f41e6456d59dab74a24cfb564bd727172f1765b5",
+      "sha256": "5dd74beb5cfd1d9813f1fe6fb3bf4d30cfd6c59452827e787911fb86a17c1b50",
       "type": "file"
     },
     "transport/internet/finalmask/realm/stun.go": {
-      "sha256": "67952d97f348f5fa40c279785b167068418ff6ab48bf5e8eb9ca41059acc13de",
+      "sha256": "0564aeb1f25d66f7e98f1c38017b2f4d3fc3737fd13063bd003cd5b19cee7330",
       "type": "file"
     },
     "transport/internet/finalmask/salamander/config.go": {
-      "sha256": "9fe05fb264f6bb80c72884323e08f4cb166af12a0fd32ac7dad4e7347c6f8691",
+      "sha256": "a8f2892fdf883a56b4dd28f170114fb80c849c5b1589b5172efad6646592539b",
       "type": "file"
     },
     "transport/internet/finalmask/salamander/config.pb.go": {
@@ -3281,7 +3297,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/sudoku/config.go": {
-      "sha256": "ad5cb4702e7c202d538f0cf2f8427c0bbb939dd4860c490cb7e9dd4ce21823da",
+      "sha256": "15bd25d81236e8a2c048e7bfe58e1de0329462a7dfa0e1a7dd903809c355b030",
       "type": "file"
     },
     "transport/internet/finalmask/sudoku/config.pb.go": {
@@ -3320,12 +3336,28 @@
       "sha256": "b62c986a0003fb87db174f5f07b297deb2a1452de96642c4a3776b9e2981c203",
       "type": "file"
     },
+    "transport/internet/finalmask/udphop/config.go": {
+      "sha256": "2555379d7cee0dfe9a06e43d4e47db6f1ecb0497a5d2620d474eb9a549324e66",
+      "type": "file"
+    },
+    "transport/internet/finalmask/udphop/config.pb.go": {
+      "sha256": "b51d8a363356232870f0b6658280ab744067d02d5d882f15723ec2d6565ae736",
+      "type": "file"
+    },
+    "transport/internet/finalmask/udphop/config.proto": {
+      "sha256": "9d030ea2da0e159666099f885878cd8c9a609ebaa68e2571a4a99cc3cc56794e",
+      "type": "file"
+    },
+    "transport/internet/finalmask/udphop/conn.go": {
+      "sha256": "468a2994fab51da605ef92dae80ca1fe80fd9e4b529d7675d89a6eba18a39ce9",
+      "type": "file"
+    },
     "transport/internet/finalmask/xdns/client.go": {
       "sha256": "8942312e6a9e6153a0bf98544d47c906dc9a3d05764d5290b23f6900b4f93669",
       "type": "file"
     },
     "transport/internet/finalmask/xdns/config.go": {
-      "sha256": "c7ee673a9bc0c9db667cb9506f48b9bd96effcd79c37ee99765b564ee6ff2e54",
+      "sha256": "da83a863386b19956db3837a2093389b42e9814b28d3ffbb2a26615b07f29e53",
       "type": "file"
     },
     "transport/internet/finalmask/xdns/config.pb.go": {
@@ -3357,11 +3389,11 @@
       "type": "file"
     },
     "transport/internet/finalmask/xicmp/client.go": {
-      "sha256": "88d872dd3b2f015e1b8329a068282ec22f2b71f8400ee710e282b4a638c0dfc2",
+      "sha256": "3bead5b1cba1908002767fbd66e06ada0c56c7d933b14a2267f86c4a6c9f63f4",
       "type": "file"
     },
     "transport/internet/finalmask/xicmp/config.go": {
-      "sha256": "341c0e4ae67bdfe78ad4f8d6be7477bfa947554a7d65307bbec76818246ee5df",
+      "sha256": "4d600c52ab0267c2ff1d2f855f82c2f9c4be0d5c74f71fb5ccb1c81bc346ce57",
       "type": "file"
     },
     "transport/internet/finalmask/xicmp/config.pb.go": {
@@ -3373,11 +3405,11 @@
       "type": "file"
     },
     "transport/internet/finalmask/xicmp/server.go": {
-      "sha256": "3647c93844f40fe95391f158d6d9330e4eb3e2adf6ec210217622a7c0843bee3",
+      "sha256": "87f66588885a89143f19fb7ef5cd7d4eeea9563d530e78d14111b83a324fb42b",
       "type": "file"
     },
     "transport/internet/finalmask/xicmp/server_oob.go": {
-      "sha256": "57088f6cd44527d9e716bf65b9c8b3e62a5c22625ff45dd22b061ed8ae2c4bdf",
+      "sha256": "1344096f620bc48ae5ce3a7591d4a1eddfac2c311204f7f6207b4ad975f01886",
       "type": "file"
     },
     "transport/internet/finalmask/xicmp/xicmp_test.go": {
@@ -3393,7 +3425,7 @@
       "type": "file"
     },
     "transport/internet/finalmask/xmc/config.go": {
-      "sha256": "603971b4a2f73382bd7e3f9d1e38aac1d9e69953be2054f0f11fa00b5debe42a",
+      "sha256": "c7f269f651634ce3f892736c8e3a150d18196d56fd0bcfe5da5d5f3ee5c9e000",
       "type": "file"
     },
     "transport/internet/finalmask/xmc/config.pb.go": {
@@ -3621,11 +3653,11 @@
       "type": "file"
     },
     "transport/internet/hysteria/config.pb.go": {
-      "sha256": "7098e9d9b9bc9088b0f8b305f4894b20ff4a4b886dcf6f028c37603f6f57a8e9",
+      "sha256": "9b91bc23a0c453613457c978c9f52f79002e9f6a650cfbea67b6156e9aa217c2",
       "type": "file"
     },
     "transport/internet/hysteria/config.proto": {
-      "sha256": "cb367de5e21293de8a9bbfe281fe0b34eea6d8473a18a14a363125381cba6ae4",
+      "sha256": "dbbf877f5db0fde1a83e998e93f06e0b9d164c59a6feeeadf59002c795fc8c9f",
       "type": "file"
     },
     "transport/internet/hysteria/congestion/bbr/bandwidth.go": {
@@ -3661,7 +3693,11 @@
       "type": "file"
     },
     "transport/internet/hysteria/congestion/brutal/brutal.go": {
-      "sha256": "950a9cd63bb93934060228f0af566f660b79b71ec17fc6ac8a05b0ddd8608c40",
+      "sha256": "b60f1ccf6ceabb5fbd370b7ea8c016105226a3c8a5e7f9ae7f41dcd12bdccbc4",
+      "type": "file"
+    },
+    "transport/internet/hysteria/congestion/brutal/brutal_test.go": {
+      "sha256": "74beab811fa33daca11a664315960e97dc48f7306d132f6b30a7e5a147be83a7",
       "type": "file"
     },
     "transport/internet/hysteria/congestion/common/pacer.go": {
@@ -3669,23 +3705,19 @@
       "type": "file"
     },
     "transport/internet/hysteria/congestion/utils.go": {
-      "sha256": "b070e488bee875af255ace4b58f47885baf073c74073006ab6c7c07ec6938cac",
+      "sha256": "497a9971f53ab921a4c5efc694708b95811a191ab39a50fa19e97034bc264e57",
       "type": "file"
     },
     "transport/internet/hysteria/conn.go": {
-      "sha256": "948fa17dc8e9f6653e70a44ddbbd0b43c8cdebf5efad485de2a15526ff2f3393",
+      "sha256": "eb63ebfa129add02bdf54b58f593382ff30e19b3a2e0f250b4ae8d8ad23a5aa1",
       "type": "file"
     },
     "transport/internet/hysteria/dialer.go": {
-      "sha256": "e3795e4dba7a5a32fe4a3cddab6d90bad4f23a7ab789bf175e592463aeaa8c9f",
+      "sha256": "9c65bb8c849e17a6a25ca7bdda7aee599953bd76af2800e0b7aa1c95020dc0c5",
       "type": "file"
     },
     "transport/internet/hysteria/hub.go": {
-      "sha256": "8b239b00fc188b7485618bf03ef2417645d3a326a64af13400d2ac7000e5e3c9",
-      "type": "file"
-    },
-    "transport/internet/hysteria/udphop/conn.go": {
-      "sha256": "1ad1951bd7cf321e990bdbaf870c230197ceade400a38d1cf7d12a58751cd2da",
+      "sha256": "9cf258e6cc7aad242654a22b7a8681e1cd423934cbe2e740da0635f0832c1373",
       "type": "file"
     },
     "transport/internet/internet.go": {
@@ -3789,15 +3821,19 @@
       "type": "file"
     },
     "transport/internet/sockopt_linux.go": {
-      "sha256": "cb721073d8b867f1384995c95ce8f5151219c0af07c00d315cc8f873c3c2f63b",
+      "sha256": "bc851082ec424193eb75745bda47cca9130723bfb4dc7a962fb6826ebe73abdb",
       "type": "file"
     },
     "transport/internet/sockopt_linux_test.go": {
       "sha256": "9246e28c409b69aa108753c3f5249f86ad8ae856a4c66c9dd12e2f4b9b0203d9",
       "type": "file"
     },
+    "transport/internet/sockopt_openbsd.go": {
+      "sha256": "2ec2d7c50ce6c71a3db06b38a48a9a3b681ecfdf5dd277587440834c1209d87f",
+      "type": "file"
+    },
     "transport/internet/sockopt_other.go": {
-      "sha256": "0f311803fcbde2a4b23a80edc0333d68c573c02dc88e130cb464baf609db2436",
+      "sha256": "22ddd3e5ecf048acd41fb0d2a9e614a1258b73064367cc401db1220cdb05e8d3",
       "type": "file"
     },
     "transport/internet/sockopt_test.go": {
@@ -3813,7 +3849,7 @@
       "type": "file"
     },
     "transport/internet/splithttp/client.go": {
-      "sha256": "7e0674cd196df9624a4aea4a9829239efb608bf87090c34971033693aab943b4",
+      "sha256": "b528c116a72e77cb51e4fb1978a07d0e92d6b0587e0bafb3011d4891a63499dc",
       "type": "file"
     },
     "transport/internet/splithttp/common.go": {
@@ -3821,7 +3857,7 @@
       "type": "file"
     },
     "transport/internet/splithttp/config.go": {
-      "sha256": "471a5f32e1b58f7a2a2ab83f3c03486be68fdd61b20a31be0e3d13b0fedab592",
+      "sha256": "a840d60915336c789b1720ede020334189d335b70a732ce9dc5deb9b93c7faa2",
       "type": "file"
     },
     "transport/internet/splithttp/config.pb.go": {
@@ -3833,7 +3869,7 @@
       "type": "file"
     },
     "transport/internet/splithttp/config_test.go": {
-      "sha256": "25e9899afdb93ccbd973ad76ea208ce44723a33323a9fde910c7caf62231e38a",
+      "sha256": "094e2409276d8cc6ab85f844331b4564c381f52a854abf0f08dba1f6e7e145f4",
       "type": "file"
     },
     "transport/internet/splithttp/connection.go": {
@@ -3841,7 +3877,7 @@
       "type": "file"
     },
     "transport/internet/splithttp/dialer.go": {
-      "sha256": "bfd4c366c12e8af49094df5e6be586668fa2fd14fa86e7467492c7c0447dcdf4",
+      "sha256": "57d5fec31df706744d6025dda31ca1209f279a8e9a9b3dbab21514e0e9adb55f",
       "type": "file"
     },
     "transport/internet/splithttp/h1_conn.go": {
@@ -3849,7 +3885,7 @@
       "type": "file"
     },
     "transport/internet/splithttp/hub.go": {
-      "sha256": "6eb4aeeb54d769f1057d8aafbbbebe280d40e17fc59794ec03e7eb624f3c4f94",
+      "sha256": "eb192e10da867bef456697474dd6c25ba145177edcba739446ea70e8e80f2bf0",
       "type": "file"
     },
     "transport/internet/splithttp/mux.go": {
@@ -3885,7 +3921,7 @@
       "type": "file"
     },
     "transport/internet/system_dialer.go": {
-      "sha256": "915d5163efb93d44b01f800f39b5e5d5505905db593955c8423b0327d8f2ffd1",
+      "sha256": "dc43755d66b31edf36465f7ecd6f5a4701da53cdf0fc57596b421741161e05c9",
       "type": "file"
     },
     "transport/internet/system_listener.go": {
@@ -3925,7 +3961,7 @@
       "type": "file"
     },
     "transport/internet/tcp/hub.go": {
-      "sha256": "10b0bb06ef801494dcb95a1e03d9020fd26b94bdfbb7c965dc5816583ba5f982",
+      "sha256": "3e04fec5e1a823b9959b6ebf56b73ac8d9acbb4fc5821f5d2d97bb2d5df07ec4",
       "type": "file"
     },
     "transport/internet/tcp/sockopt_darwin.go": {
@@ -3953,7 +3989,7 @@
       "type": "file"
     },
     "transport/internet/tcp_hub.go": {
-      "sha256": "e69dddb58f29144a2e8376d60fdf85dc81e590818086fbc731c226ef1e7496ef",
+      "sha256": "44565ac262c061389a1aabaf6e401777201f8a20b5f736fc5cb140dd641b30ac",
       "type": "file"
     },
     "transport/internet/tls/config.go": {
@@ -4048,8 +4084,16 @@
       "sha256": "5d16e3fe7f7d643fc072ca70ced83572f82bf292f411b43b51905891ce30d820",
       "type": "file"
     },
+    "transport/internet/udp/hub_openbsd.go": {
+      "sha256": "feb9f5d2836546029a280af3379651cbf2ded6f64e9d5dacbff6d7170226e41a",
+      "type": "file"
+    },
+    "transport/internet/udp/hub_openbsd_test.go": {
+      "sha256": "ade8039596dac2ba97fbef892b56860d3b180b2a5deb126d3815803286d0e9f7",
+      "type": "file"
+    },
     "transport/internet/udp/hub_other.go": {
-      "sha256": "9f0adc44a38d305527c34e3124206e081262290ac02004e00d86106ad42213df",
+      "sha256": "2a97119b472c9bacfcc24c2d8fb2eb4dac680682d698eb79ebb95dc8a114862a",
       "type": "file"
     },
     "transport/internet/udp/udp.go": {
@@ -4073,7 +4117,7 @@
       "type": "file"
     },
     "transport/internet/websocket/dialer.go": {
-      "sha256": "da9f014c955747a25dba60545db0665105663c5b193e1a15956d415548eb956f",
+      "sha256": "c8cdd478e8238f1cb92eeeca32037f60df89c8d4e6ceb1d871975870d62afc6c",
       "type": "file"
     },
     "transport/internet/websocket/hub.go": {
@@ -4097,7 +4141,7 @@
       "type": "file"
     },
     "transport/pipe/pipe.go": {
-      "sha256": "4b60f7dc30aa54fa128b46c68e4ea4512d45d8491740b40d53a9ac90acce9616",
+      "sha256": "aac1dc96d28a90edd52886b64f341c65bdf6eb96e475c609c65abf45d440de44",
       "type": "file"
     },
     "transport/pipe/pipe_test.go": {
@@ -4114,7 +4158,7 @@
     }
   },
   "schema": 1,
-  "upstream_commit": "5ca6f4b7d4dc20a881d4330e498892697627ec0c",
+  "upstream_commit": "52a412d9e2f5c2a5142b1b4e2ab3771dacb8b120",
   "upstream_repository": "XTLS/Xray-core",
-  "upstream_tag": "v26.7.28"
+  "upstream_tag": "v26.9.9"
 }
