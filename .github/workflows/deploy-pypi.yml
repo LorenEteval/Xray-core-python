@@ -225,9 +225,18 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Keep the current release tooling at the workspace root. A recovery can
+      # target a release commit from before its idempotent tag guard existed.
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out exact release source
+        uses: actions/checkout@v7
+        with:
           ref: ${{ inputs.checkout_ref }}
+          path: release-source
           fetch-depth: 0
           persist-credentials: false
       - name: Check Git, GitHub, and PyPI state
@@ -235,11 +244,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REQUESTED_UPSTREAM_PRERELEASE: ${{ inputs.upstream_prerelease }}
         run: |
-          if [[ "$(<UPSTREAM_PRERELEASE)" != "$REQUESTED_UPSTREAM_PRERELEASE" ]]; then
+          if [[ "$(<release-source/UPSTREAM_PRERELEASE)" != "$REQUESTED_UPSTREAM_PRERELEASE" ]]; then
             echo "Workflow dispatch prerelease input disagrees with provenance" >&2
             exit 1
           fi
-          python scripts/sync_xray_core.py guard-release \
+          python scripts/sync_xray_core.py --root release-source guard-release \
             --downstream-tag '${{ inputs.release_tag }}' \
             --upstream-tag '${{ inputs.upstream_tag }}'
 
