@@ -3,7 +3,10 @@ name: Deploy PyPI
 on:
   push:
   pull_request:
-  workflow_call:
+  # PyPI Trusted Publishing identifies the top-level workflow that requests
+  # the OIDC token. Keep automated releases as independent dispatches instead
+  # of invoking this file as a reusable workflow.
+  workflow_dispatch:
     inputs:
       checkout_ref:
         description: Exact synchronization commit to build
@@ -233,7 +236,7 @@ jobs:
           REQUESTED_UPSTREAM_PRERELEASE: ${{ inputs.upstream_prerelease }}
         run: |
           if [[ "$(<UPSTREAM_PRERELEASE)" != "$REQUESTED_UPSTREAM_PRERELEASE" ]]; then
-            echo "Reusable workflow prerelease input disagrees with provenance" >&2
+            echo "Workflow dispatch prerelease input disagrees with provenance" >&2
             exit 1
           fi
           python scripts/sync_xray_core.py guard-release \
@@ -260,7 +263,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag --annotate "$RELEASE_TAG" --message "Corresponds to Xray-core $UPSTREAM_TAG"
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            echo "Reusing existing release tag $RELEASE_TAG"
+          else
+            git tag --annotate "$RELEASE_TAG" --message "Corresponds to Xray-core $UPSTREAM_TAG"
+          fi
           git push origin "$RELEASE_TAG"
 
   publish-to-pypi:

@@ -16,7 +16,6 @@ concurrency:
 
 permissions:
   contents: write
-  id-token: write
 
 jobs:
   synchronize:
@@ -86,16 +85,25 @@ jobs:
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   release:
-    name: Build and publish synchronized release
+    name: Dispatch synchronized release
     needs: synchronize
     if: needs.synchronize.outputs.changed == 'true'
-    uses: ./.github/workflows/deploy-pypi.yml
+    runs-on: ubuntu-24.04
     permissions:
-      contents: write
-      id-token: write
-    with:
-      checkout_ref: ${{ needs.synchronize.outputs.commit }}
-      release_tag: ${{ needs.synchronize.outputs.release_tag }}
-      upstream_tag: ${{ needs.synchronize.outputs.upstream_tag }}
-      upstream_prerelease: ${{ needs.synchronize.outputs.upstream_prerelease == 'true' }}
-    secrets: inherit
+      actions: write
+    steps:
+      - name: Start top-level release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHECKOUT_REF: ${{ needs.synchronize.outputs.commit }}
+          RELEASE_TAG: ${{ needs.synchronize.outputs.release_tag }}
+          UPSTREAM_PRERELEASE: ${{ needs.synchronize.outputs.upstream_prerelease }}
+          UPSTREAM_TAG: ${{ needs.synchronize.outputs.upstream_tag }}
+        run: |
+          gh workflow run deploy-pypi.yml \
+            --repo '${{ github.repository }}' \
+            --ref main \
+            --field checkout_ref="$CHECKOUT_REF" \
+            --field release_tag="$RELEASE_TAG" \
+            --field upstream_tag="$UPSTREAM_TAG" \
+            --field upstream_prerelease="$UPSTREAM_PRERELEASE"

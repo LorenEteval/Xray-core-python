@@ -814,6 +814,65 @@ def url_exists(url: str, token: str | None = None) -> bool:
     return request_bytes(url, token=token, allow_not_found=True) is not None
 
 
+def matching_release_tag_exists(
+    root: Path, downstream_tag: str, upstream_tag: str
+) -> bool:
+    tag_ref = f'refs/tags/{downstream_tag}'
+    local_tags = subprocess.run(
+        ['git', 'tag', '--list', downstream_tag],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    if downstream_tag not in local_tags:
+        return False
+
+    tag_type = subprocess.run(
+        ['git', 'cat-file', '-t', tag_ref],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if tag_type != 'tag':
+        raise SyncError(f'Existing Git tag is not annotated: {downstream_tag}')
+
+    tag_commit = subprocess.run(
+        ['git', 'rev-list', '-n', '1', tag_ref],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    head_commit = subprocess.run(
+        ['git', 'rev-parse', 'HEAD'],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if tag_commit != head_commit:
+        raise SyncError(
+            f'Existing Git tag {downstream_tag} points to {tag_commit}, '
+            f'not release commit {head_commit}'
+        )
+
+    tag_subject = subprocess.run(
+        ['git', 'for-each-ref', '--format=%(contents:subject)', tag_ref],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    expected_subject = f'Corresponds to Xray-core {upstream_tag}'
+    if tag_subject != expected_subject:
+        raise SyncError(
+            f'Existing Git tag {downstream_tag} has unexpected annotation'
+        )
+    return True
+
+
 def command_guard_release(args: argparse.Namespace) -> None:
     root = args.root
     verify_repository(root)
@@ -825,24 +884,17 @@ def command_guard_release(args: argparse.Namespace) -> None:
     if upstream_tag != provenance['upstream_tag']:
         raise SyncError('Requested upstream tag disagrees with provenance')
 
-    local_tags = subprocess.run(
-        ['git', 'tag', '--list', downstream_tag],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.splitlines()
-    if downstream_tag in local_tags:
-        raise SyncError(f'Git tag already exists: {downstream_tag}')
+    existing_tag = matching_release_tag_exists(root, downstream_tag, upstream_tag)
 
     token = token_from_environment()
     downstream_repository = os.environ.get('GITHUB_REPOSITORY', DOWNSTREAM_REPOSITORY)
     encoded_downstream_tag = urllib.parse.quote(downstream_tag, safe='')
-    if url_exists(
+    remote_tag_exists = url_exists(
         f'https://api.github.com/repos/{downstream_repository}/git/ref/tags/'
         f'{encoded_downstream_tag}',
         token,
-    ):
+    )
+    if remote_tag_exists and not existing_tag:
         raise SyncError(f'Remote Git tag already exists: {downstream_tag}')
     if url_exists(
         f'https://api.github.com/repos/{downstream_repository}/releases/tags/'
@@ -864,7 +916,12 @@ def command_guard_release(args: argparse.Namespace) -> None:
             raise SyncError(
                 f'Upstream release is already mapped by a GitHub Release: {upstream_tag}'
             )
-    print(f'Release state is clear for {downstream_tag} and upstream {upstream_tag}.')
+    if existing_tag:
+        print(f'Reusing existing release tag {downstream_tag}.')
+    else:
+        print(
+            f'Release state is clear for {downstream_tag} and upstream {upstream_tag}.'
+        )
 
 
 def release_notes(provenance: dict[str, Any]) -> str:

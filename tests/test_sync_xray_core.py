@@ -1,6 +1,7 @@
 import argparse
 import io
 import json
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -202,6 +203,81 @@ class ProvenanceTests(unittest.TestCase):
             )
 
         self.assertNotIn('executable', manifest['files']['tool.cmd'])
+
+
+class ReleaseTagTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        subprocess.run(['git', 'init', '--quiet'], cwd=self.root, check=True)
+        subprocess.run(
+            ['git', 'config', 'user.name', 'Release Test'],
+            cwd=self.root,
+            check=True,
+        )
+        subprocess.run(
+            ['git', 'config', 'user.email', 'release@example.com'],
+            cwd=self.root,
+            check=True,
+        )
+        (self.root / 'tracked.txt').write_text('first\n', encoding='utf-8')
+        subprocess.run(['git', 'add', 'tracked.txt'], cwd=self.root, check=True)
+        subprocess.run(
+            ['git', 'commit', '--quiet', '-m', 'Initial'], cwd=self.root, check=True
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_missing_release_tag_is_clear(self):
+        self.assertFalse(
+            sync.matching_release_tag_exists(
+                self.root, 'v1.8.26.11', 'v26.9.8'
+            )
+        )
+
+    def test_matching_annotated_release_tag_can_be_reused(self):
+        subprocess.run(
+            [
+                'git',
+                'tag',
+                '--annotate',
+                'v1.8.26.11',
+                '--message',
+                'Corresponds to Xray-core v26.9.8',
+            ],
+            cwd=self.root,
+            check=True,
+        )
+        self.assertTrue(
+            sync.matching_release_tag_exists(
+                self.root, 'v1.8.26.11', 'v26.9.8'
+            )
+        )
+
+    def test_release_tag_for_another_commit_is_rejected(self):
+        subprocess.run(
+            [
+                'git',
+                'tag',
+                '--annotate',
+                'v1.8.26.11',
+                '--message',
+                'Corresponds to Xray-core v26.9.8',
+            ],
+            cwd=self.root,
+            check=True,
+        )
+        (self.root / 'tracked.txt').write_text('second\n', encoding='utf-8')
+        subprocess.run(['git', 'add', 'tracked.txt'], cwd=self.root, check=True)
+        subprocess.run(
+            ['git', 'commit', '--quiet', '-m', 'Next'], cwd=self.root, check=True
+        )
+
+        with self.assertRaisesRegex(sync.SyncError, 'not release commit'):
+            sync.matching_release_tag_exists(
+                self.root, 'v1.8.26.11', 'v26.9.8'
+            )
 
 
 class SynchronizationTransactionTests(unittest.TestCase):
